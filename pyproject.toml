@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qml-healthcare"
+version = "0.1.0"
+description = "Quantum Machine Learning for Healthcare Diagnostics — QSVM, VQC, and QNN for ICU mortality prediction."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "Tirthesh Jani" }]
+keywords = ["quantum", "machine-learning", "qiskit", "qsvm", "healthcare", "icu", "mortality"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "qiskit>=1.0,<2",
+    "qiskit-machine-learning>=0.7",
+    "qiskit-aer>=0.13",
+    "scikit-learn>=1.3",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+    "joblib",
+    "tqdm",
+    "pyyaml",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "ruff>=0.1",
+    "black>=23.0",
+    "pre-commit",
+    "nbqa",
+    "jupyter",
+    "ipykernel",
+    "nbconvert",
+]
+kaggle = ["kaggle"]
+
+[project.scripts]
+qml-download = "qml_healthcare.data.download:main"
+qml-baseline = "qml_healthcare.pipeline:run_baseline"
+qml-qsvm = "qml_healthcare.pipeline:run_qsvm"
+qml-bonus = "qml_healthcare.pipeline:run_bonus"
+qml-all = "qml_healthcare.pipeline:run_all"
+
+[project.urls]
+Repository = "https://github.com/TirtheshJani/QML-Healthcare-Diagnostics"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*" = ["E402", "F401", "B905"]
+"tests/*" = ["B011"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src/qml_healthcare"]
+omit = ["*/notebooks/*"]

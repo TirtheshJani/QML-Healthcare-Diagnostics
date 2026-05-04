@@ -1,0 +1,88 @@
+{
+  "bonus": {
+    "qnn": {
+      "accuracy": 0.525,
+      "balanced_accuracy": 0.5249999999999999,
+      "f1": 0.4973544973544973,
+      "pr_auc": 0.5259327349324447,
+      "precision": 0.5280898876404494,
+      "recall": 0.47,
+      "roc_auc": 0.5025999999999999,
+      "train_seconds": 7.986918399983551
+    },
+    "vqc": {
+      "accuracy": 0.56,
+      "balanced_accuracy": 0.56,
+      "f1": 0.5643564356435643,
+      "pr_auc": 0.544896350504801,
+      "precision": 0.5588235294117647,
+      "recall": 0.57,
+      "roc_auc": 0.5665000000000001,
+      "train_seconds": 8.940767099993536
+    }
+  },
+  "classical": {
+    "logreg": {
+      "accuracy": 0.736,
+      "balanced_accuracy": 0.7241019940248732,
+      "f1": 0.5416666666666666,
+      "pr_auc": 0.5780810552925525,
+      "precision": 0.4406779661016949,
+      "recall": 0.7027027027027027,
+      "roc_auc": 0.8179554876212973,
+      "train_seconds": 0.007244499982334673
+    },
+    "random_forest": {
+      "accuracy": 0.8,
+      "balanced_accuracy": 0.6058848051135969,
+      "f1": 0.3630573248407643,
+      "pr_auc": 0.5259841851289528,
+      "precision": 0.6195652173913043,
+      "recall": 0.25675675675675674,
+      "roc_auc": 0.7998622015331527,
+      "train_seconds": 0.42220579998684116
+    },
+    "svm_rbf": {
+      "accuracy": 0.812,
+      "balanced_accuracy": 0.6313022534102226,
+      "f1": 0.41975308641975306,
+      "pr_auc": 0.5318910380936405,
+      "precision": 0.6666666666666666,
+      "recall": 0.3063063063063063,
+      "roc_auc": 0.7593708747307718,
+      "train_seconds": 1.574173899978632
+    }
+  },
+  "qsvm": {
+    "qsvm_custom": {
+      "accuracy": 0.69,
+      "balanced_accuracy": 0.69,
+      "f1": 0.6990291262135923,
+      "pr_auc": 0.7168382629906731,
+      "precision": 0.6792452830188679,
+      "recall": 0.72,
+      "roc_auc": 0.745,
+      "train_seconds": 16.287132199999178
+    },
+    "qsvm_pauli": {
+      "accuracy": 0.51,
+      "balanced_accuracy": 0.51,
+      "f1": 0.5148514851485149,
+      "pr_auc": 0.4801396638168671,
+      "precision": 0.5098039215686274,
+      "recall": 0.52,
+      "roc_auc": 0.499,
+      "train_seconds": 23.066244299989194
+    },
+    "qsvm_zz": {
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "f1": 0.4897959183673469,
+      "pr_auc": 0.5382221581824287,
+      "precision": 0.5,
+      "recall": 0.48,
+      "roc_auc": 0.5246000000000001,
+      "train_seconds": 18.04566689999774
+    }
+  }
+}

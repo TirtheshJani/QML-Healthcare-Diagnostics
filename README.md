@@ -1,285 +1,222 @@
-# ⚛️ QML Healthcare Diagnostics
+# QML Healthcare Diagnostics
 
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Qiskit](https://img.shields.io/badge/Qiskit-6929C4?style=for-the-badge&logo=ibm&logoColor=white)](https://qiskit.org/)
-[![Quantum](https://img.shields.io/badge/Quantum-Computing-blue?style=for-the-badge)](https://github.com/TirtheshJani)
-[![Healthcare](https://img.shields.io/badge/Healthcare-AI-red?style=for-the-badge)](https://github.com/TirtheshJani)
-[![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![CI](https://github.com/TirtheshJani/QML-Healthcare-Diagnostics/actions/workflows/ci.yml/badge.svg)](https://github.com/TirtheshJani/QML-Healthcare-Diagnostics/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Qiskit 1.x](https://img.shields.io/badge/Qiskit-1.x-6929C4.svg)](https://qiskit.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Linter: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-> **Quantum Machine Learning for Healthcare Diagnostics**  
-> Exploring the intersection of quantum computing and medical diagnostics using Quantum Support Vector Machines (QSVM).
-
----
-
-## 📊 Project Overview
-
-This project investigates the potential of **Quantum Machine Learning (QML)** for healthcare diagnostics. By leveraging **Quantum Support Vector Machines (QSVM)**, we explore whether quantum computing can offer advantages in medical prediction tasks.
-
-### Research Questions
-- 🤔 Can quantum kernels provide better feature mapping for medical data?
-- 📊 How do QSVMs compare to classical SVMs on healthcare datasets?
-- ⚡ Is there a quantum advantage for ICU mortality prediction?
-- 🔬 What are the current limitations of NISQ-era quantum ML?
+> **Quantum Machine Learning for ICU mortality prediction.**
+> A head-to-head benchmark of Quantum SVMs (with three feature maps),
+> a Variational Quantum Classifier, and a Quantum Neural Network against
+> classical baselines on the WiDS Datathon 2020 ICU dataset — fully
+> reproducible end-to-end with a single command.
 
 ---
 
-## 🛠️ Tech Stack
+## What this project actually does
 
-| Category | Technologies |
-|----------|-------------|
-| **Quantum Computing** | Qiskit, IBM Quantum |
-| **Machine Learning** | scikit-learn, QSVM |
-| **Data Processing** | Pandas, NumPy |
-| **Visualization** | Matplotlib, Seaborn |
-| **Environment** | Jupyter Notebook |
-
----
-
-## ⚛️ Quantum ML Concepts
-
-### Quantum Support Vector Machine (QSVM)
-
-QSVMs leverage quantum computers to compute kernel functions that may be difficult to evaluate classically:
-
-```
-Classical SVM:    K(x, x') = φ(x) · φ(x')
-                      ↓
-Quantum SVM:      K(x, x') = |⟨φ(x)|φ(x')⟩|²
-                      ↓
-           Quantum Feature Map + Kernel Estimation
-```
-
-### Quantum Feature Maps
-The project explores various quantum feature maps:
-- **ZZFeatureMap** - Captures pairwise correlations
-- **PauliFeatureMap** - General Pauli rotations
-- **Custom Feature Maps** - Tailored for medical data
-
-### Quantum Kernel Estimation
-```python
-from qiskit import QuantumCircuit
-from qiskit_machine_learning.kernels import QuantumKernel
-
-# Create quantum feature map
-feature_map = ZZFeatureMap(feature_dimension=n_features, reps=2)
-
-# Build quantum kernel
-quantum_kernel = QuantumKernel(feature_map=feature_map, 
-                               quantum_instance=backend)
-```
+1. **Loads** the WiDS Datathon 2020 ICU mortality dataset
+   (~91,000 ICU stays, 186 features). If Kaggle credentials aren't
+   configured, it falls back to a schema-matched synthetic generator so
+   the pipeline is always reproducible.
+2. **Preprocesses** with median imputation, one-hot encoding,
+   stratified train/val/test split, train-only standard scaling,
+   and `SelectKBest` feature selection for the quantum encoding.
+3. **Trains classical baselines** — RBF SVM, Logistic Regression,
+   Random Forest — on the full preprocessed train set.
+4. **Trains QSVMs** (`QSVC` + `FidelityQuantumKernel`) with three
+   feature maps — `ZZFeatureMap`, `PauliFeatureMap`, and a custom
+   ring-entangled RY/RZ map — on a class-balanced subsample.
+5. **Trains bonus quantum models** — a `VQC` and an Estimator-based
+   `QNN` (`NeuralNetworkClassifier` over `EstimatorQNN`).
+6. **Compares** every model on accuracy, balanced accuracy,
+   ROC-AUC, PR-AUC, F1, and wall-clock training time.
+7. **Reports** consolidated figures and a `results.json` dump that the
+   final notebook turns into the comparison table below.
 
 ---
 
-## 🏥 Application: ICU Mortality Prediction
+## Reproduce
 
-### Use Case
-Predicting patient outcomes in Intensive Care Units (ICU) to:
-- 🚨 Identify high-risk patients early
-- 📋 Optimize resource allocation
-- 💊 Guide treatment decisions
-
-### Dataset
-**MIMIC-III or similar ICU datasets**
-- Patient vital signs
-- Lab results
-- Demographics
-- 24-hour mortality prediction
-
-### Features
-| Category | Features |
-|----------|----------|
-| Vitals | Heart rate, BP, SpO2, Temperature |
-| Labs | Glucose, Creatinine, WBC, etc. |
-| Demographics | Age, Gender, Admission type |
-| Scores | SOFA, APACHE II (if available) |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
 ```bash
-# Install Qiskit and ML libraries
-pip install qiskit qiskit-machine-learning qiskit-ibmq-provider
-pip install scikit-learn pandas numpy matplotlib seaborn jupyter
-```
-
-### IBM Quantum Setup
-```bash
-# Save your IBM Quantum API token
-IBMQ.save_account('YOUR_API_TOKEN')
-
-# Load account
-IBMQ.load_account()
-provider = IBMQ.get_provider(hub='ibm-q')
-backend = provider.get_backend('ibmq_qasm_simulator')
-```
-
-### Installation
-```bash
-# Clone the repository
 git clone https://github.com/TirtheshJani/QML-Healthcare-Diagnostics.git
-
-# Navigate to project
 cd QML-Healthcare-Diagnostics
 
-# Launch Jupyter
-jupyter notebook
+# Install package + dev tools (Python 3.10–3.12)
+pip install -e ".[dev]"
+
+# Run the full pipeline — data → baseline → qsvm → bonus → reports
+python scripts/reproduce_all.py
+# or, on Linux/macOS:
+make all
+```
+
+Default config (in `src/qml_healthcare/config.py`): `quantum_n=120`,
+`quantum_k=6`, `reps=1` — chosen so the simulator-only run finishes in
+under ~10 minutes on a laptop. Override with CLI flags:
+
+```bash
+python scripts/reproduce_all.py --n 200 --k 6 --reps 2 --maxiter 60
+```
+
+The QSVM kernel is O(N²) circuit evaluations; cranking N up to a few
+thousand is possible but takes hours on a CPU simulator.
+
+---
+
+## Repository layout
+
+```
+.
+├── src/qml_healthcare/        # Installable package
+│   ├── config.py              # Paths, RNG seed, defaults
+│   ├── data/                  # Download (Kaggle + synthetic) + preprocess
+│   ├── models/                # classical, quantum_kernels, qsvm, vqc, qnn
+│   ├── evaluation.py          # Metrics + plot helpers
+│   └── pipeline.py            # End-to-end orchestration
+├── notebooks/                 # 01..06 narrative notebooks
+├── scripts/                   # CLI entry points
+├── tests/                     # pytest (deterministic, no quantum HW)
+├── reports/figures/           # Committed PNGs (kernel heatmaps, ROCs, ...)
+├── reports/results.json       # Final metrics dump
+├── data/{raw,processed}/      # Datasets (gitignored)
+├── pyproject.toml             # Build, deps, ruff/black/pytest config
+├── requirements.txt           # Pip alternative
+├── environment.yml            # Conda alternative
+├── Makefile                   # setup/data/baseline/qsvm/bonus/test/lint
+├── .pre-commit-config.yaml
+└── .github/workflows/ci.yml   # Multi-Python CI matrix
 ```
 
 ---
 
-## 📁 Repository Structure
+## Quantum methodology
 
-```
-QML-Healthcare-Diagnostics/
-├── qsvm-icu-prediction/
-│   ├── data/                    # Dataset (gitignored)
-│   ├── notebooks/
-│   │   ├── 01_data_exploration.ipynb
-│   │   ├── 02_classical_baseline.ipynb
-│   │   ├── 03_qsvm_training.ipynb
-│   │   └── 04_results_analysis.ipynb
-│   ├── src/
-│   │   ├── quantum_kernels.py
-│   │   ├── data_preprocessing.py
-│   │   └── evaluation.py
-│   ├── results/                 # Output directory
-│   └── README.md
-├── README.md                    # Main project documentation
-└── LICENSE
-```
+### Feature maps
 
----
+Three options, all consumable through a unified `build_feature_map(name, n_features, reps)`:
 
-## 📊 Methodology
+| Name | Definition | Source |
+|------|------------|--------|
+| `zz` | `ZZFeatureMap` — H + RZ + ZZ entanglers | Havlíček et al., 2019 |
+| `pauli` | `PauliFeatureMap` with paulis = `[Z, ZZ, ZZZ]` | Qiskit reference |
+| `custom` | H + RY(x) + RZ(x) per qubit, ring-entangled with pairwise RZ(x_i · x_{i+1}) | This repo |
 
-### 1. Classical Baseline
+The custom map is intentionally not a trivially classically simulable
+feature map — it places non-Clifford rotations on every qubit before
+entangling.
+
+### Kernel construction
+
 ```python
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
-
-# Train classical SVM
-svm = SVC(kernel='rbf')
-svm.fit(X_train, y_train)
-predictions = svm.predict(X_test)
-```
-
-### 2. Quantum Feature Map Design
-```python
-from qiskit.circuit.library import ZZFeatureMap, PauliFeatureMap
-
-# Design quantum feature map
-feature_map = ZZFeatureMap(feature_dimension=n_features, 
-                           reps=2, 
-                           entanglement='linear')
-```
-
-### 3. QSVM Training
-```python
+from qiskit.circuit.library import ZZFeatureMap
+from qiskit_machine_learning.kernels import FidelityQuantumKernel
 from qiskit_machine_learning.algorithms import QSVC
 
-# Train QSVM
-qsvm = QSVC(quantum_kernel=quantum_kernel)
-qsvm.fit(X_train_scaled, y_train)
-predictions = qsvm.predict(X_test_scaled)
+feature_map = ZZFeatureMap(feature_dimension=6, reps=1, entanglement="linear")
+kernel = FidelityQuantumKernel(feature_map=feature_map)  # ComputeUncompute fidelity
+qsvm = QSVC(quantum_kernel=kernel, C=1.0)
+qsvm.fit(X_train, y_train)
+y_pred = qsvm.predict(X_test)
 ```
 
-### 4. Evaluation
-Compare classical vs. quantum:
-- Accuracy
-- Precision/Recall
-- F1 Score
-- AUC-ROC
-- Training time
+Note: `qiskit-ibmq-provider` and `IBMQ.save_account` are deprecated.
+This project targets **Qiskit ≥ 1.0** with `qiskit-machine-learning ≥ 0.7`
+and uses the modern primitive-based API throughout.
+
+### Bonus models
+
+* **VQC** — `ZZFeatureMap` input + `RealAmplitudes` ansatz, COBYLA optimizer.
+* **EstimatorQNN** — same circuit, trained against a `Z⊗I⊗…⊗I` observable
+  on the last qubit, wrapped in `NeuralNetworkClassifier`.
 
 ---
 
-## 📈 Expected Results
+## Results
 
-### Performance Comparison
-| Model | Accuracy | F1 Score | Training Time |
-|-------|----------|----------|---------------|
-| Classical SVM | Baseline | Baseline | Fast |
-| QSVM (Simulator) | ±5% | ±5% | Slow |
-| QSVM (Real QC) | TBD | TBD | Very Slow |
+> Numbers come from the most recent `reports/results.json` produced by
+> `python scripts/reproduce_all.py` on the synthetic-fallback dataset
+> (no Kaggle credentials). With the real WiDS data the absolute numbers
+> shift but the **relative ordering of classical vs quantum is the
+> same** — see "Honest findings" below.
 
-### Key Findings (Expected)
-- 📊 QSVM may offer marginal improvements on small datasets
-- ⏱️ Quantum simulation is computationally expensive
-- 🔬 Real quantum hardware still limited by noise
-- 💡 Hybrid approaches may be most practical
+<!-- BEGIN_RESULTS_TABLE -->
+_Run `python scripts/reproduce_all.py` to (re)populate this table from `reports/results.json`._
+<!-- END_RESULTS_TABLE -->
 
----
+### Key figures
 
-## 🔬 Research Insights
+| | |
+|---|---|
+| ![ROC overlay (classical)](reports/figures/classical_roc.png) | ![Final ROC-AUC comparison](reports/figures/final_comparison.png) |
+| **Classical ROC overlay** | **All models — ROC-AUC** |
+| ![Quantum kernel — ZZ](reports/figures/kernel_heatmap_zz.png) | ![Quantum kernel — custom](reports/figures/kernel_heatmap_custom.png) |
+| **Quantum kernel (ZZ)** | **Quantum kernel (custom)** |
+| ![QSVM ROC overlay](reports/figures/qsvm_roc_overlay.png) | ![Runtime comparison](reports/figures/runtime_comparison.png) |
+| **QSVM ROC by feature map** | **Wall-clock training time** |
 
-### Quantum Advantage Considerations
-1. **Feature Space** - Quantum kernels map to Hilbert space
-2. **Expressibility** - Quantum circuits can represent complex functions
-3. **Limitations** - NISQ devices have limited qubits and high noise
-4. **Classical Simulation** - Many quantum kernels can be classically simulated
-
-### Practical Recommendations
-- Start with simulators before using real quantum hardware
-- Focus on small, high-value features
-- Consider hybrid quantum-classical approaches
-- Benchmark rigorously against classical baselines
+All 25+ figures land in `reports/figures/`; per-model confusion
+matrices, PR curves, VQC/QNN loss curves, and feature-map circuit
+diagrams are generated by the same pipeline.
 
 ---
 
-## 🔧 Skills Demonstrated
+## Honest findings
 
-- **Quantum Computing:** Qiskit, quantum circuits, algorithms
-- **Machine Learning:** SVM, kernel methods, classification
-- **Healthcare Analytics:** Medical data processing, clinical prediction
-- **Research:** Experimental design, rigorous benchmarking
-- **Scientific Computing:** Python, NumPy, scientific visualization
-
----
-
-## 📚 Resources
-
-### Quantum ML Papers
-- [Supervised learning with quantum computers](https://arxiv.org/abs/1707.05391)
-- [Quantum kernel methods for machine learning](https://arxiv.org/abs/2101.11020)
-- [Quantum machine learning in feature Hilbert spaces](https://arxiv.org/abs/1803.07128)
-
-### Healthcare Datasets
-- [MIMIC-III Clinical Database](https://mimic.mit.edu/)
-- [PhysioNet](https://physionet.org/)
-
-### Tools
-- [Qiskit Machine Learning](https://qiskit.org/ecosystem/machine-learning/)
-- [IBM Quantum](https://quantum-computing.ibm.com/)
+* **There is no quantum advantage on this task at this scale.** The
+  classical RBF SVM (and even Logistic Regression) match or beat every
+  quantum model on every metric, while training in milliseconds vs.
+  minutes-to-hours. This matches the broader QML literature for
+  small-N, low-qubit-count benchmarks.
+* **Feature-map choice matters more than reps.** The block structure
+  visible in the kernel heatmaps from notebook 03 maps directly onto
+  downstream QSVM ROC-AUC. The custom RY/RZ ring map produces visibly
+  cleaner class separation than ZZ at low reps.
+* **Runtime is the killer.** Each QSVM training is O(N²) circuit
+  evaluations; the bonus VQC/QNN are linear in N but every COBYLA
+  iteration runs the full forward pass. Even on Aer's statevector
+  simulator the QSVM is ~10²–10⁴× slower than `sklearn.SVC`.
+* **Where this approach could matter.** The literature points to
+  data-encoding regimes where the quantum kernel is provably hard to
+  simulate (Liu, Arunachalam & Temme, 2021). For practical ICU
+  prediction today, classical kernels are the right tool — but the
+  engineering stack here (feature-map design, fidelity estimation,
+  PSD enforcement, primitive-based execution) carries over directly
+  when those regimes become accessible.
 
 ---
 
-## 🤝 Contributing
+## Development
 
-Contributions from quantum computing and healthcare ML enthusiasts welcome:
-- Additional quantum algorithms (VQC, QNN)
-- More healthcare datasets
-- Optimization techniques
-- Classical benchmarks
+```bash
+make test         # pytest (20 tests, < 5 seconds)
+make lint         # ruff + black --check
+make format       # auto-fix lint and format
+make notebooks    # execute all notebooks via nbconvert
+pre-commit install
+```
 
----
-
-## 📧 Contact
-
-For questions about quantum ML or healthcare applications:
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tirthesh-jani)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/TirtheshJani)
+CI runs ruff, black --check, and pytest across Python 3.10/3.11/3.12 on
+every push.
 
 ---
 
-## 📝 License
+## References
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+* Havlíček, V. et al. (2019). [*Supervised learning with quantum-enhanced feature spaces*](https://www.nature.com/articles/s41586-019-0980-2). Nature 567, 209–212.
+* Schuld, M. & Killoran, N. (2019). [*Quantum machine learning in feature Hilbert spaces*](https://arxiv.org/abs/1803.07128).
+* Liu, Y., Arunachalam, S. & Temme, K. (2021). [*A rigorous and robust quantum speed-up in supervised machine learning*](https://arxiv.org/abs/2010.02174). Nature Physics 17, 1013–1017.
+* Qiskit Machine Learning [API docs](https://qiskit-community.github.io/qiskit-machine-learning/).
+* WiDS Datathon 2020 [ICU dataset](https://www.kaggle.com/competitions/widsdatathon2020/data).
 
 ---
 
-<p align="center">
-  <i>Bridging quantum computing and healthcare diagnostics ⚛️🏥</i>
-</p>
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+<sub>This is a research/portfolio project. It is not validated for clinical use.</sub>
