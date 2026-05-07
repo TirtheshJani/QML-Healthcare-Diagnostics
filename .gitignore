@@ -51,7 +51,7 @@ data/processed/*
 !data/processed/.gitkeep
 
 # Trained model artifacts
-models/
+/models/
 *.pkl
 *.joblib
 src/*.egg-info/
