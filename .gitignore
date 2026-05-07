@@ -50,8 +50,8 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
-# Trained model artifacts
-models/
+# Trained model artifacts (root-level only; src/qml_healthcare/models/ is source code)
+/models/
 *.pkl
 *.joblib
 src/*.egg-info/
