@@ -143,7 +143,16 @@ and uses the modern primitive-based API throughout.
 > same** — see "Honest findings" below.
 
 <!-- BEGIN_RESULTS_TABLE -->
-_Run `python scripts/reproduce_all.py` to (re)populate this table from `reports/results.json`._
+| Model | Type | Accuracy | Balanced acc. | ROC-AUC | PR-AUC | F1 | Train (s) |
+|-------|------|---------:|--------------:|--------:|-------:|---:|----------:|
+| Logistic Regression | classical | 0.736 | 0.724 | 0.818 | 0.578 | 0.542 | 0.01 |
+| Random Forest | classical | 0.800 | 0.606 | 0.800 | 0.526 | 0.363 | 0.42 |
+| SVM (RBF) | classical | 0.812 | 0.631 | 0.759 | 0.532 | 0.420 | 1.57 |
+| QSVM (custom feature map) | quantum | 0.690 | 0.690 | 0.745 | 0.717 | 0.699 | 16.29 |
+| VQC | quantum | 0.560 | 0.560 | 0.567 | 0.545 | 0.564 | 8.94 |
+| QSVM (ZZFeatureMap) | quantum | 0.500 | 0.500 | 0.525 | 0.538 | 0.490 | 18.05 |
+| QNN (EstimatorQNN) | quantum | 0.525 | 0.525 | 0.503 | 0.526 | 0.497 | 7.99 |
+| QSVM (PauliFeatureMap) | quantum | 0.510 | 0.510 | 0.499 | 0.480 | 0.515 | 23.07 |
 <!-- END_RESULTS_TABLE -->
 
 ### Key figures
