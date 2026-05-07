@@ -78,9 +78,7 @@ def main() -> None:
     table = build_table(results)
 
     text = README.read_text(encoding="utf-8")
-    pattern = re.compile(
-        r"<!-- BEGIN_RESULTS_TABLE -->.*?<!-- END_RESULTS_TABLE -->", re.DOTALL
-    )
+    pattern = re.compile(r"<!-- BEGIN_RESULTS_TABLE -->.*?<!-- END_RESULTS_TABLE -->", re.DOTALL)
     new_block = f"<!-- BEGIN_RESULTS_TABLE -->\n{table}\n<!-- END_RESULTS_TABLE -->"
     if not pattern.search(text):
         raise RuntimeError("README is missing BEGIN_RESULTS_TABLE / END_RESULTS_TABLE markers.")
