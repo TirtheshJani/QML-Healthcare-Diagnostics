@@ -1,1 +1,1 @@
-"""Model implementations: classical baselines, quantum kernels, QSVM, VQC, QNN."""
+"""Quantum and classical model implementations."""

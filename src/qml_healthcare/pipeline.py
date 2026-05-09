@@ -238,6 +238,7 @@ def run_all(
     bonus_maxiter: int = 60,
     seed: int = RANDOM_SEED,  # noqa: ARG001
 ) -> dict:
+    """Run all five pipeline stages in sequence and return the final metrics dict."""
     run_data()
     run_baseline(quantum_n=quantum_n, quantum_k=quantum_k)
     run_qsvm(quantum_n=quantum_n, quantum_k=quantum_k, reps=reps)

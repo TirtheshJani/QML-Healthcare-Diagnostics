@@ -1,39 +1,17 @@
-"""Estimator-based Quantum Neural Network classifier.
-
-The circuit is a ``ZZFeatureMap`` (input) composed with a ``RealAmplitudes`` ansatz
-(weights), measured against a single-qubit ``Z`` observable on the last qubit.
-"""
+"""Quantum Neural Network classifier (SamplerQNN + NeuralNetworkClassifier)."""
 
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
 
 import numpy as np
-from qiskit import QuantumCircuit
-from qiskit.circuit.library import RealAmplitudes, ZZFeatureMap
-from qiskit.quantum_info import SparsePauliOp
+from qiskit.circuit.library import PauliFeatureMap, RealAmplitudes
+from qiskit.primitives import StatevectorSampler
 from qiskit_machine_learning.algorithms import NeuralNetworkClassifier
-from qiskit_machine_learning.neural_networks import EstimatorQNN
-from qiskit_machine_learning.optimizers import COBYLA
+from qiskit_machine_learning.neural_networks import SamplerQNN
+from scipy.optimize import minimize
 
-from qml_healthcare.config import RANDOM_SEED
-
-
-@dataclass
-class FittedQNN:
-    name: str
-    model: NeuralNetworkClassifier
-    y_pred: np.ndarray
-    y_proba: np.ndarray
-    train_seconds: float
-    loss_history: list[float] = field(default_factory=list)
-
-
-def _build_observable(num_qubits: int) -> SparsePauliOp:
-    """Z on the last qubit, identity elsewhere → ``Z ⊗ I ⊗ ... ⊗ I`` (Qiskit little-endian)."""
-    label = "Z" + "I" * (num_qubits - 1)
-    return SparsePauliOp.from_list([(label, 1.0)])
+from qml_healthcare.models._base import FittedModel
 
 
 def train_qnn(
@@ -41,61 +19,49 @@ def train_qnn(
     y_train: np.ndarray,
     X_test: np.ndarray,
     n_features: int,
-    reps: int = 1,
+    reps: int = 2,
     maxiter: int = 60,
-    name: str = "qnn",
-) -> FittedQNN:
-    """Train an ``EstimatorQNN`` wrapped in ``NeuralNetworkClassifier`` (binary, ±1 output)."""
-    np.random.seed(RANDOM_SEED)
-    feature_map = ZZFeatureMap(feature_dimension=n_features, reps=reps, entanglement="linear")
-    ansatz = RealAmplitudes(num_qubits=n_features, reps=max(1, reps))
-
-    circuit = QuantumCircuit(n_features)
-    circuit.compose(feature_map, inplace=True)
-    circuit.compose(ansatz, inplace=True)
-
-    qnn = EstimatorQNN(
-        circuit=circuit,
-        observables=_build_observable(n_features),
-        input_params=feature_map.parameters,
-        weight_params=ansatz.parameters,
-    )
-
+) -> FittedModel:
+    """Train a SamplerQNN classifier (PauliFeatureMap + RealAmplitudes); return predictions."""
     loss_history: list[float] = []
 
-    def _cb(_weights: np.ndarray, value: float) -> None:
-        loss_history.append(float(value))
+    def callback(weights: np.ndarray, loss: float) -> None:
+        loss_history.append(float(loss))
 
-    optimizer = COBYLA(maxiter=maxiter)
-    initial_point = np.random.uniform(-np.pi, np.pi, size=qnn.num_weights)
+    def cobyla_optimizer(fun, x0, jac=None, bounds=None):  # noqa: ARG001
+        return minimize(fun, x0, method="COBYLA", options={"maxiter": maxiter, "rhobeg": 0.5})
+
+    feature_map = PauliFeatureMap(feature_dimension=n_features, reps=1, paulis=["Z", "ZZ"])
+    ansatz = RealAmplitudes(n_features, reps=reps)
+
+    qc = feature_map.compose(ansatz)
+
+    qnn = SamplerQNN(
+        circuit=qc,
+        input_params=list(feature_map.parameters),
+        weight_params=list(ansatz.parameters),
+        interpret=lambda x: int(x) % 2,
+        output_shape=2,
+        sampler=StatevectorSampler(),
+    )
 
     classifier = NeuralNetworkClassifier(
         neural_network=qnn,
-        loss="squared_error",
-        optimizer=optimizer,
-        callback=_cb,
-        initial_point=initial_point,
+        loss="cross_entropy",
+        optimizer=cobyla_optimizer,
+        callback=callback,
     )
 
-    X_train_a = np.asarray(X_train, dtype=float)
-    X_test_a = np.asarray(X_test, dtype=float)
-    # NeuralNetworkClassifier with a 1-D output expects ±1 labels for binary classification.
-    y_train_pm = np.where(np.asarray(y_train).astype(int) == 1, 1, -1)
-
     t0 = time.perf_counter()
-    classifier.fit(X_train_a, y_train_pm)
-    elapsed = time.perf_counter() - t0
+    classifier.fit(X_train, y_train)
+    train_seconds = time.perf_counter() - t0
 
-    raw = np.asarray(classifier.predict(X_test_a)).ravel()
-    y_pred = (raw > 0).astype(int)
-    # Map signed predictions in [-1, +1] to a [0, 1] pseudo-probability.
-    y_proba = (np.clip(raw, -1.0, 1.0) + 1.0) / 2.0
+    y_pred = classifier.predict(X_test)
+    y_proba = classifier.predict_proba(X_test)[:, 1]
 
-    return FittedQNN(
-        name=name,
-        model=classifier,
+    return FittedModel(
         y_pred=y_pred,
-        y_proba=np.asarray(y_proba, dtype=float),
-        train_seconds=float(elapsed),
+        y_proba=y_proba,
+        train_seconds=train_seconds,
         loss_history=loss_history,
     )

@@ -56,7 +56,7 @@ def plot_roc_curves(
     path: Path,
     title: str = "ROC curves",
 ) -> None:
-    """results: name -> {y_proba: ndarray}."""
+    """Plot overlaid ROC curves; results maps name → {y_proba: ndarray}."""
     fig, ax = plt.subplots(figsize=(8, 7))
     for name, payload in results.items():
         if "y_proba" not in payload or len(np.unique(y_true)) < 2:
@@ -80,6 +80,7 @@ def plot_pr_curves(
     path: Path,
     title: str = "Precision-Recall curves",
 ) -> None:
+    """Plot overlaid Precision-Recall curves; results maps name → {y_proba: ndarray}."""
     fig, ax = plt.subplots(figsize=(8, 7))
     for name, payload in results.items():
         if "y_proba" not in payload or len(np.unique(y_true)) < 2:
@@ -99,6 +100,7 @@ def plot_pr_curves(
 def plot_confusion(
     y_true: np.ndarray, y_pred: np.ndarray, path: Path, title: str = "Confusion matrix"
 ) -> None:
+    """Save a seaborn confusion-matrix heatmap with Survived/Died axis labels."""
     cm = confusion_matrix(y_true, y_pred)
     fig, ax = plt.subplots(figsize=(6, 5))
     sns.heatmap(
@@ -142,6 +144,7 @@ def plot_metric_bars(
     title: str | None = None,
     ylim: tuple[float, float] | None = None,
 ) -> None:
+    """Bar chart comparing one scalar metric across all models; annotates each bar."""
     names = [n for n, m in results.items() if metric in m]
     values = [results[n][metric] for n in names]
     fig, ax = plt.subplots(figsize=(max(6, 0.9 * len(names)), 5))
@@ -167,6 +170,7 @@ def plot_metric_bars(
 
 
 def plot_loss_curve(loss: list[float], path: Path, title: str = "Training loss") -> None:
+    """Line plot of per-iteration training loss for variational models (VQC, QNN)."""
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(loss, lw=2, color="tab:red")
     ax.set_xlabel("Iteration")
@@ -178,6 +182,7 @@ def plot_loss_curve(loss: list[float], path: Path, title: str = "Training loss")
 
 
 def plot_class_balance(y: np.ndarray, path: Path, title: str = "Class balance") -> None:
+    """Bar chart showing Survived vs. Died counts and percentages."""
     counts = np.bincount(y.astype(int))
     labels = ["Survived", "Died"]
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -213,6 +218,7 @@ def dump_results(results: dict[str, Any], path: Path | None = None) -> Path:
 
 
 def load_results(path: Path | None = None) -> dict[str, Any]:
+    """Load metrics from results.json; raise FileNotFoundError if not yet generated."""
     path = path or RESULTS_PATH
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)

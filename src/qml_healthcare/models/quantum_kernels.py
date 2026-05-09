@@ -1,4 +1,4 @@
-"""Quantum feature maps + ``FidelityQuantumKernel`` factory."""
+"""Quantum feature maps and the FidelityQuantumKernel wrapper."""
 
 from __future__ import annotations
 
@@ -11,59 +11,42 @@ from qiskit_machine_learning.kernels import FidelityQuantumKernel
 FEATURE_MAP_NAMES: tuple[str, ...] = ("zz", "pauli", "custom")
 
 
-def _custom_ring_feature_map(n_features: int, reps: int = 1) -> QuantumCircuit:
-    """Hadamard + RY(x) + RZ(x) per qubit, ring-entangled with pairwise RZ(x_i * x_{i+1})."""
-    if n_features < 1:
-        raise ValueError("n_features must be >= 1")
-    x = ParameterVector("x", length=n_features)
-    qc = QuantumCircuit(n_features, name="custom_ring")
-    for _ in range(max(1, reps)):
-        for i in range(n_features):
-            qc.h(i)
-            qc.ry(x[i], i)
-            qc.rz(x[i], i)
-        if n_features > 1:
-            for i in range(n_features):
-                j = (i + 1) % n_features
-                qc.cx(i, j)
-                qc.rz(x[i] * x[j], j)
-                qc.cx(i, j)
+def build_feature_map(name: str, n_features: int, reps: int = 2) -> QuantumCircuit:
+    """Return a Qiskit QuantumCircuit encoding ``n_features`` classical inputs."""
+    name = name.lower()
+    if name == "zz":
+        return ZZFeatureMap(feature_dimension=n_features, reps=reps)
+    if name == "pauli":
+        return PauliFeatureMap(feature_dimension=n_features, reps=reps, paulis=["Z", "ZZ"])
+    if name == "custom":
+        return _custom_feature_map(n_features=n_features, reps=reps)
+    raise ValueError(f"Unknown feature map '{name}'. Choose from {FEATURE_MAP_NAMES}.")
+
+
+def _custom_feature_map(n_features: int, reps: int) -> QuantumCircuit:
+    """H + RZ(2x) encoding with CZ entanglement — explicit alternative to ZZFeatureMap."""
+    params = ParameterVector("x", n_features)
+    qc = QuantumCircuit(n_features)
+    for _ in range(reps):
+        qc.h(range(n_features))
+        for i, p in enumerate(params):
+            qc.rz(2.0 * p, i)
+        for i in range(n_features - 1):
+            qc.cz(i, i + 1)
     return qc
 
 
-def build_feature_map(name: str, n_features: int, reps: int = 1) -> QuantumCircuit:
-    """Construct one of ``FEATURE_MAP_NAMES`` with ``n_features`` qubits."""
-    name = name.lower()
-    if name == "zz":
-        return ZZFeatureMap(feature_dimension=n_features, reps=reps, entanglement="linear")
-    if name == "pauli":
-        return PauliFeatureMap(
-            feature_dimension=n_features,
-            reps=reps,
-            paulis=["Z", "ZZ", "ZZZ"] if n_features >= 3 else ["Z", "ZZ"],
-            entanglement="linear",
-        )
-    if name == "custom":
-        return _custom_ring_feature_map(n_features, reps=reps)
-    raise ValueError(f"Unknown feature map '{name}'. Expected one of {FEATURE_MAP_NAMES}.")
-
-
 def make_quantum_kernel(feature_map: QuantumCircuit) -> FidelityQuantumKernel:
-    """Wrap a feature map in a ``FidelityQuantumKernel`` (ComputeUncompute fidelity)."""
+    """Wrap a feature map in a FidelityQuantumKernel (statevector-based)."""
     return FidelityQuantumKernel(feature_map=feature_map)
 
 
 def compute_kernel_matrix(
     kernel: FidelityQuantumKernel,
-    X: np.ndarray,
-    Y: np.ndarray | None = None,
+    X_a: np.ndarray,
+    X_b: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Evaluate K(X, X) when ``Y`` is None, else K(X, Y)."""
-    X = np.asarray(X, dtype=float)
-    if Y is None:
-        K = kernel.evaluate(x_vec=X)
-        K = (K + K.T) / 2.0
-        np.fill_diagonal(K, 1.0)
-        return K
-    Y = np.asarray(Y, dtype=float)
-    return kernel.evaluate(x_vec=X, y_vec=Y)
+    """Evaluate the kernel matrix K[i,j] = ⟨φ(xᵢ)|φ(xⱼ)⟩²."""
+    if X_b is None:
+        return kernel.evaluate(X_a)
+    return kernel.evaluate(X_a, X_b)
