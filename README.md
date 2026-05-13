@@ -16,8 +16,35 @@
 
 ---
 
+## About this project
+
+**Yes — this is a Quantum Machine Learning (QML) project for ICU mortality
+rate prediction.** Given the first 24 hours of an intensive-care stay
+(vitals, lab values, GCS components, the APACHE IV hospital-death
+probability, etc.), the trained models output a probability that the
+patient will die in-hospital. The label is the WiDS 2020 target
+`hospital_death` (binary, ~8 % positive class).
+
+The project's purpose is **not** to deploy clinically — it is to provide a
+reproducible, honest benchmark of current near-term QML techniques against
+classical baselines on a real, imbalanced healthcare tabular dataset:
+
+- **Problem type:** binary classification (in-hospital mortality: 0 / 1).
+- **Data:** WiDS Datathon 2020 — ~91 k ICU stays, 186 raw features;
+  schema-matched synthetic fallback when Kaggle credentials are absent.
+- **Quantum models:** Quantum SVM (3 feature maps), Variational Quantum
+  Classifier (VQC), Quantum Neural Network (`SamplerQNN`).
+- **Classical baselines:** Logistic Regression, Random Forest, SVM-RBF.
+- **Quantum stack:** Qiskit ≥ 1.0 + `qiskit-machine-learning` ≥ 0.7, fully
+  primitive-based (`StatevectorSampler`), runs on CPU simulators — no IBM
+  Quantum account required.
+- **Status:** research / portfolio project. **Not validated for clinical use.**
+
+---
+
 ## Table of Contents
 
+- [About this project](#about-this-project)
 - [What this project does](#what-this-project-does)
 - [Quick start](#quick-start)
 - [Repository layout](#repository-layout)
@@ -26,6 +53,10 @@
 - [Quantum methodology](#quantum-methodology)
 - [Results](#results)
 - [Honest findings](#honest-findings)
+- [Assumptions and limitations](#assumptions-and-limitations)
+- [Glossary](#glossary)
+- [Troubleshooting](#troubleshooting)
+- [Notes for reviewers](#notes-for-reviewers)
 - [Development](#development)
 - [References](#references)
 - [License](#license)
@@ -282,6 +313,92 @@ kernel heatmaps.
   here (feature-map design, fidelity estimation, PSD enforcement,
   primitive-based execution) carries over directly when those regimes become
   accessible on fault-tolerant hardware.
+
+---
+
+## Assumptions and limitations
+
+- **Synthetic fallback is for plumbing, not for science.** When Kaggle
+  credentials are absent, `data/download.py` generates a 5 000-row
+  schema-matched dataset with plausible marginal distributions and a
+  signal-carrying mortality label. It exercises the full pipeline and
+  produces stable CI artefacts, but absolute metric values are **not**
+  representative of the real WiDS data. Use real WiDS data for any
+  quantitative claim.
+- **Small-N quantum subsample.** `QSVC`'s training kernel is O(N²) circuit
+  evaluations. We subsample to `N = 200` class-balanced points for QSVM /
+  VQC / QNN by default. Classical baselines are trained on the full
+  preprocessed training set, so comparisons are between *small-N quantum*
+  and *full-N classical* models — this is the realistic constraint for
+  current simulators / hardware.
+- **Feature selection drives qubit count.** Quantum models use `k = 6`
+  features chosen by `SelectKBest(f_classif)` on the training split only
+  (no test-set leakage). Increasing `k` adds qubits and exponentially
+  increases simulator memory.
+- **Simulator only.** All circuits run on Qiskit's `StatevectorSampler`
+  primitive (exact, no shot noise). There are no IBM Quantum runtime calls
+  and no transpilation to a specific backend. Numbers will drift on noisy
+  hardware.
+- **Class imbalance is handled by stratified splitting and balanced
+  subsampling for quantum models**, not by `class_weight` or SMOTE. PR-AUC
+  and balanced accuracy are reported alongside accuracy because raw
+  accuracy is misleading at ~8 % positive prevalence.
+- **No clinical validation.** Models are not calibrated, not externally
+  validated, and not subjected to fairness / subgroup analysis. Do not use
+  them for patient triage.
+
+---
+
+## Glossary
+
+| Term | Meaning |
+|------|---------|
+| **QML** | Quantum Machine Learning — ML algorithms whose hypothesis class involves parameterised quantum circuits or quantum-derived kernels. |
+| **QSVM** | Quantum Support Vector Machine — classical SVM whose kernel `K(x, x') = \|⟨φ(x)\|φ(x')⟩\|²` is computed from a quantum feature map φ. |
+| **VQC** | Variational Quantum Classifier — feature-map circuit followed by a parameterised ansatz; parameters trained by a classical optimiser. |
+| **QNN** | Quantum Neural Network — here, a `SamplerQNN` (feature map + ansatz) wrapped in `NeuralNetworkClassifier`, with parity interpretation for binary output. |
+| **Feature map** | A circuit `φ(x)` that loads classical data `x` into a quantum state. `ZZFeatureMap`, `PauliFeatureMap`, and a custom H+RZ+CZ map are compared here. |
+| **Ansatz** | A parameterised circuit (here `RealAmplitudes`) whose parameters are optimised during VQC / QNN training. |
+| **Fidelity kernel** | Kernel computed via the ComputeUncompute trick: run `φ(x)` then `φ(x')†` and measure the probability of the all-zero state. Returned by `FidelityQuantumKernel`. |
+| **ICU mortality** | The binary outcome `hospital_death` — whether the patient died during the same hospital admission as the ICU stay. |
+| **APACHE IV** | A validated ICU severity-of-illness score; the WiDS dataset includes the APACHE IV-derived predicted hospital-death probability as a feature. |
+| **WiDS 2020** | Women in Data Science Datathon 2020 — Kaggle competition on ICU mortality using MIT GOSSIS data. |
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause / fix |
+|---------|--------------------|
+| `kaggle.api.kaggle_api_extended ... 401 Unauthorized` | `~/.kaggle/kaggle.json` missing or wrong permissions. Run `chmod 600 ~/.kaggle/kaggle.json`. The pipeline will fall back to synthetic data if you skip this. |
+| `ModuleNotFoundError: qiskit_machine_learning` | Run `pip install -e ".[dev]"` from the repo root — the package pins compatible Qiskit / `qiskit-machine-learning` versions in `pyproject.toml`. |
+| `QiskitError: 'Sampler' object has no attribute 'run'` | You have an old Qiskit < 1.0 install. Reinstall in a clean venv; this project uses the primitive-based API only. |
+| QSVM run takes hours | Kernel is O(N²). Lower `--n` (e.g. `--n 100`) or `--k` (fewer qubits = faster simulation). |
+| Notebook kernel can't find `qml_healthcare` | The package must be installed in development mode: `pip install -e .`. Then restart the Jupyter kernel. |
+| CI is green but local results differ | RNG seed is fixed (`RANDOM_SEED = 42`), but COBYLA tolerance and BLAS thread counts can introduce small drift across machines. The relative ordering of models is stable. |
+| `ValueError: enforce_psd=True ... matrix not PSD` | Numerical noise on a near-degenerate kernel. Increase `--n` slightly or reduce `--reps`; this almost never triggers at defaults. |
+
+---
+
+## Notes for reviewers
+
+- **Reproducibility.** A single command (`make all` or `python scripts/reproduce_all.py`)
+  rebuilds every figure, every metric, and updates the results table in this
+  README via `scripts/update_readme_table.py`. CI runs the same pipeline on
+  Python 3.10 / 3.11 / 3.12.
+- **Determinism.** All randomness (data split, subsampling, RF / VQC / QNN
+  init) goes through `config.RANDOM_SEED = 42`. Quantum simulation is exact
+  (statevector), not shot-based.
+- **No leakage.** `StandardScaler` and `SelectKBest` are fit on the training
+  fold only and applied to validation / test. The pipeline returns a single
+  `DataBundle` so the same split feeds every model.
+- **Test coverage.** `pytest` runs ~20 tests in under 5 s covering
+  preprocessing invariants, feature-map circuit shapes, kernel PSD,
+  classical-vs-quantum API parity, and metric computation.
+- **What we deliberately did *not* do.** No hyperparameter sweep (one
+  default config per model), no ensemble of quantum and classical models,
+  no calibration, no SHAP / interpretability, no hardware execution. Each
+  of these is a natural extension; see the issues tab.
 
 ---
 
