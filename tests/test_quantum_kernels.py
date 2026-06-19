@@ -40,6 +40,16 @@ def test_kernel_matrix_is_symmetric_and_psd(name):
     assert eig_min > -1e-6, f"kernel must be PSD, got eig_min={eig_min}"
 
 
+def test_zz_and_pauli_feature_maps_differ():
+    """The 'pauli' map must be a genuinely different encoding from 'zz', not a duplicate
+    (ZZFeatureMap == PauliFeatureMap with paulis Z,ZZ, so the kernels would otherwise match)."""
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(8, 3))
+    K_zz = compute_kernel_matrix(make_quantum_kernel(build_feature_map("zz", 3, reps=2)), X)
+    K_pauli = compute_kernel_matrix(make_quantum_kernel(build_feature_map("pauli", 3, reps=2)), X)
+    assert not np.allclose(K_zz, K_pauli), "zz and pauli kernels should differ"
+
+
 def test_kernel_matrix_cross_shape():
     qc = build_feature_map("zz", n_features=2, reps=1)
     kernel = make_quantum_kernel(qc)

@@ -5,13 +5,14 @@ from __future__ import annotations
 import time
 
 import numpy as np
-from qiskit.circuit.library import PauliFeatureMap, RealAmplitudes
+from qiskit.circuit.library import RealAmplitudes
 from qiskit.primitives import StatevectorSampler
 from qiskit_machine_learning.algorithms import NeuralNetworkClassifier
 from qiskit_machine_learning.neural_networks import SamplerQNN
 from scipy.optimize import minimize
 
 from qml_healthcare.models._base import FittedModel
+from qml_healthcare.models.quantum_kernels import build_feature_map
 
 
 def train_qnn(
@@ -31,7 +32,7 @@ def train_qnn(
     def cobyla_optimizer(fun, x0, jac=None, bounds=None):  # noqa: ARG001
         return minimize(fun, x0, method="COBYLA", options={"maxiter": maxiter, "rhobeg": 0.5})
 
-    feature_map = PauliFeatureMap(feature_dimension=n_features, reps=1, paulis=["Z", "ZZ"])
+    feature_map = build_feature_map("pauli", n_features=n_features, reps=1)
     ansatz = RealAmplitudes(n_features, reps=reps)
 
     qc = feature_map.compose(ansatz)
@@ -48,6 +49,7 @@ def train_qnn(
     classifier = NeuralNetworkClassifier(
         neural_network=qnn,
         loss="cross_entropy",
+        one_hot=True,
         optimizer=cobyla_optimizer,
         callback=callback,
     )
