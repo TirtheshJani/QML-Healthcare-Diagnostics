@@ -17,7 +17,7 @@ from qml_healthcare.config import (
 from qml_healthcare.data.download import ensure_dataset
 from qml_healthcare.data.preprocess import DataBundle, prepare_data
 from qml_healthcare.evaluation import (
-    compute_metrics,
+    compute_metrics_with_ci,
     dump_results,
     figure_path,
     load_results,
@@ -26,10 +26,11 @@ from qml_healthcare.evaluation import (
     plot_kernel_heatmap,
     plot_loss_curve,
     plot_metric_bars,
+    plot_metric_bars_with_ci,
     plot_pr_curves,
     plot_roc_curves,
 )
-from qml_healthcare.models.classical import train_baseline
+from qml_healthcare.models.classical import cross_validate_baselines, train_baseline
 from qml_healthcare.models.qnn import train_qnn
 from qml_healthcare.models.qsvm import train_qsvm
 from qml_healthcare.models.quantum_kernels import (
@@ -74,9 +75,18 @@ def run_baseline(
     fitted = train_baseline(bundle.X_train, bundle.y_train, bundle.X_test)
 
     metrics = {
-        name: compute_metrics(bundle.y_test, f.y_pred, f.y_proba, train_seconds=f.train_seconds)
+        name: compute_metrics_with_ci(
+            bundle.y_test, f.y_pred, f.y_proba, train_seconds=f.train_seconds
+        )
         for name, f in fitted.items()
     }
+
+    # Stratified k-fold CV on the train split (classical models are cheap to refit).
+    print("Cross-validating classical baselines (5-fold)...")
+    cv_stats = cross_validate_baselines(bundle.X_train, bundle.y_train)
+    for name, stats in cv_stats.items():
+        if name in metrics:
+            metrics[name].update(stats)
     proba_dict = {name: {"y_proba": f.y_proba} for name, f in fitted.items()}
     plot_roc_curves(
         proba_dict, bundle.y_test, figure_path("classical_roc.png"), "Classical baselines — ROC"
@@ -134,7 +144,7 @@ def run_qsvm(
             bundle.X_test_q,
             name=f"qsvm_{fm_name}",
         )
-        m = compute_metrics(
+        m = compute_metrics_with_ci(
             bundle.y_test_q, fitted.y_pred, fitted.y_proba, train_seconds=fitted.train_seconds
         )
         qsvm_metrics[fitted.name] = m
@@ -177,7 +187,7 @@ def run_bonus(
     plot_confusion(
         bundle.y_test_q, vqc.y_pred, figure_path("confusion_vqc.png"), "VQC — Confusion matrix"
     )
-    vqc_m = compute_metrics(
+    vqc_m = compute_metrics_with_ci(
         bundle.y_test_q, vqc.y_pred, vqc.y_proba, train_seconds=vqc.train_seconds
     )
 
@@ -194,7 +204,7 @@ def run_bonus(
     plot_confusion(
         bundle.y_test_q, qnn.y_pred, figure_path("confusion_qnn.png"), "QNN — Confusion matrix"
     )
-    qnn_m = compute_metrics(
+    qnn_m = compute_metrics_with_ci(
         bundle.y_test_q, qnn.y_pred, qnn.y_proba, train_seconds=qnn.train_seconds
     )
 
@@ -216,6 +226,13 @@ def run_reports() -> dict:
 
     plot_metric_bars(
         flat, "roc_auc", figure_path("final_comparison.png"), "ROC-AUC across models", ylim=(0, 1)
+    )
+    plot_metric_bars_with_ci(
+        flat,
+        "roc_auc",
+        figure_path("roc_auc_ci_comparison.png"),
+        "ROC-AUC across models (95% bootstrap CI)",
+        ylim=(0, 1),
     )
     plot_metric_bars(flat, "f1", figure_path("f1_comparison.png"), "F1 across models", ylim=(0, 1))
     plot_metric_bars(
