@@ -6,13 +6,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Linter: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Docs: live site](https://img.shields.io/badge/docs-live%20site-2965f1.svg)](https://tirtheshjani.github.io/QML-Healthcare-Diagnostics/)
 
 > **Quantum Machine Learning for ICU mortality prediction.**  
 > A reproducible, end-to-end benchmark of Quantum SVMs (three feature maps),
 > a Variational Quantum Classifier, and a Quantum Neural Network against
-> classical baselines — all on the WiDS Datathon 2020 ICU dataset.
+> classical baselines, all on the WiDS Datathon 2020 ICU dataset.
 > Runs offline from a single command using a schema-matched synthetic fallback
 > when Kaggle credentials are not available.
+
+**Live site and interactive demo:** <https://tirtheshjani.github.io/QML-Healthcare-Diagnostics/>
+(documentation, interactive charts, and a client-side classical prediction demo, built with
+`docs/` + MkDocs and deployed via GitHub Pages).
 
 ---
 

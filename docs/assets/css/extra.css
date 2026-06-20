@@ -1,0 +1,228 @@
+/* Dashboard styling for the QML ICU showcase site. */
+
+:root {
+  --qml-classical: #5c6bc0;
+  --qml-quantum: #fb8c00;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 2.2rem 1rem 1.4rem;
+}
+.hero h1 {
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.4rem;
+}
+.hero p {
+  max-width: 46rem;
+  margin: 0.6rem auto 1.2rem;
+  font-size: 1.05rem;
+}
+.hero .md-button {
+  margin: 0.25rem 0.3rem;
+}
+
+.callout-headline {
+  border-left: 4px solid var(--md-primary-fg-color);
+  background: var(--md-code-bg-color);
+  padding: 1rem 1.2rem;
+  border-radius: 0.4rem;
+  margin: 1.4rem 0 2rem;
+}
+
+/* KPI cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+.kpi-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  padding: 1.1rem 1rem;
+  text-align: center;
+  background: var(--md-default-bg-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.kpi-value {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.kpi-label {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.3rem;
+}
+.kpi-sub {
+  font-size: 0.78rem;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.2rem;
+}
+.kpi-classical .kpi-value {
+  color: var(--qml-classical);
+}
+.kpi-quantum .kpi-value {
+  color: var(--qml-quantum);
+}
+
+/* Chart cards */
+.chart-card {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  padding: 1rem 1.1rem;
+  margin: 1rem 0;
+  background: var(--md-default-bg-color);
+}
+
+/* Navigation cards */
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+.nav-card {
+  display: block;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  padding: 1.1rem 1.2rem;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.nav-card:hover {
+  border-color: var(--md-primary-fg-color);
+  transform: translateY(-2px);
+}
+.nav-card h3 {
+  margin: 0 0 0.3rem;
+}
+.nav-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Figure gallery */
+.figure-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin: 1.2rem 0;
+}
+.figure-grid figure {
+  margin: 0;
+  text-align: center;
+}
+.figure-grid img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+}
+.figure-grid figcaption {
+  font-size: 0.82rem;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.4rem;
+}
+
+/* Live demo widget */
+.qml-demo {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  padding: 1.2rem 1.3rem;
+  margin: 1.2rem 0;
+  background: var(--md-default-bg-color);
+}
+.qml-demo .demo-banner {
+  background: var(--md-code-bg-color);
+  border-left: 4px solid var(--qml-quantum);
+  border-radius: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+.qml-demo .demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+}
+@media (max-width: 720px) {
+  .qml-demo .demo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.demo-field {
+  margin-bottom: 0.9rem;
+}
+.demo-field label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.demo-field .demo-readout {
+  font-variant-numeric: tabular-nums;
+  color: var(--md-primary-fg-color);
+}
+.demo-field .demo-unit {
+  display: block;
+  font-weight: 400;
+  font-size: 0.76rem;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.3rem;
+}
+.demo-field input[type="range"] {
+  width: 100%;
+}
+.demo-result {
+  text-align: center;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  padding: 1.1rem;
+  align-self: start;
+}
+.demo-prob {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+.demo-band {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+.demo-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--md-default-fg-color--lightest);
+  overflow: hidden;
+  margin: 0.9rem 0 0.4rem;
+}
+.demo-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #43a047, #fb8c00, #e53935);
+  transition: width 0.15s ease;
+}
+.demo-auc {
+  font-size: 0.8rem;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.6rem;
+}
+.band-low {
+  color: #2e7d32;
+}
+.band-moderate {
+  color: #ef6c00;
+}
+.band-elevated {
+  color: #c62828;
+}

@@ -50,6 +50,7 @@ dev = [
     "nbconvert",
 ]
 kaggle = ["kaggle"]
+docs = ["mkdocs-material>=9.5"]
 
 [project.scripts]
 qml-download = "qml_healthcare.data.download:main"

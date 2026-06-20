@@ -1,0 +1,76 @@
+site_name: QML for ICU Mortality Prediction
+site_description: >-
+  A reproducible benchmark of quantum machine learning against classical baselines for
+  ICU mortality prediction, with an honest negative result.
+site_author: Tirthesh Jani
+site_url: https://tirtheshjani.github.io/QML-Healthcare-Diagnostics/
+repo_url: https://github.com/TirtheshJani/QML-Healthcare-Diagnostics
+repo_name: TirtheshJani/QML-Healthcare-Diagnostics
+copyright: Copyright 2025 Tirthesh Jani. MIT License.
+
+docs_dir: docs
+
+# Flat page URLs (page.html, not page/index.html) so the JS can fetch assets/... from any page.
+use_directory_urls: false
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.top
+    - navigation.tabs
+    - navigation.sections
+    - toc.follow
+    - content.code.copy
+    - search.highlight
+    - search.suggest
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Findings: findings.md
+  - Methodology: methodology.md
+  - Architecture: architecture.md
+  - Live demo: demo.md
+  - Reproducibility: reproducibility.md
+  - Limitations: limitations.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_css:
+  - assets/css/extra.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js
+  - assets/js/charts.js
+  - assets/js/demo.js
