@@ -23,9 +23,13 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-from qml_healthcare.config import FIGURES_DIR, RESULTS_PATH
+from qml_healthcare.config import FIGURES_DIR, RANDOM_SEED, RESULTS_PATH
 
 sns.set_theme(style="whitegrid", context="talk")
+
+# Metrics that get bootstrap confidence intervals. roc_auc / pr_auc need probabilities.
+DEFAULT_CI_METRICS: tuple[str, ...] = ("roc_auc", "pr_auc", "f1", "balanced_accuracy", "accuracy")
+_PROBA_METRICS = frozenset({"roc_auc", "pr_auc"})
 
 
 def compute_metrics(
@@ -47,6 +51,88 @@ def compute_metrics(
         out["pr_auc"] = float(average_precision_score(y_true, y_proba))
     if train_seconds is not None:
         out["train_seconds"] = float(train_seconds)
+    return out
+
+
+def _metric_value(
+    metric: str, y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray | None
+) -> float:
+    """Evaluate a single named metric for the bootstrap loop."""
+    if metric == "accuracy":
+        return float(accuracy_score(y_true, y_pred))
+    if metric == "balanced_accuracy":
+        return float(balanced_accuracy_score(y_true, y_pred))
+    if metric == "f1":
+        return float(f1_score(y_true, y_pred, zero_division=0))
+    if metric == "roc_auc":
+        return float(roc_auc_score(y_true, y_proba))
+    if metric == "pr_auc":
+        return float(average_precision_score(y_true, y_proba))
+    raise ValueError(f"Unknown metric '{metric}'.")
+
+
+def bootstrap_metric_ci(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    y_proba: np.ndarray | None = None,
+    metrics: tuple[str, ...] = DEFAULT_CI_METRICS,
+    n_boot: int = 1000,
+    seed: int = RANDOM_SEED,
+    ci: float = 0.95,
+) -> dict[str, float]:
+    """Percentile bootstrap confidence intervals for test-set metrics.
+
+    Resamples the test predictions with replacement ``n_boot`` times (seeded, so the
+    output is deterministic) and returns ``{<metric>_ci_low, <metric>_ci_high}`` for each
+    metric. Probability-based metrics are skipped when ``y_proba`` is None. Bootstrap draws
+    that contain only one class are discarded, since AUC/F1 are undefined there.
+    """
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    y_proba = None if y_proba is None else np.asarray(y_proba)
+    wanted = [m for m in metrics if not (m in _PROBA_METRICS and y_proba is None)]
+    n = len(y_true)
+    rng = np.random.default_rng(seed)
+
+    samples: dict[str, list[float]] = {m: [] for m in wanted}
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        yt = y_true[idx]
+        if np.unique(yt).size < 2:
+            continue
+        yp = y_pred[idx]
+        ypr = None if y_proba is None else y_proba[idx]
+        for m in wanted:
+            samples[m].append(_metric_value(m, yt, yp, ypr))
+
+    alpha = (1.0 - ci) / 2.0
+    out: dict[str, float] = {}
+    for m, vals in samples.items():
+        if not vals:
+            continue
+        arr = np.asarray(vals, dtype=float)
+        out[f"{m}_ci_low"] = float(np.quantile(arr, alpha))
+        out[f"{m}_ci_high"] = float(np.quantile(arr, 1.0 - alpha))
+    return out
+
+
+def compute_metrics_with_ci(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    y_proba: np.ndarray | None = None,
+    train_seconds: float | None = None,
+    n_boot: int = 1000,
+    seed: int = RANDOM_SEED,
+    ci_metrics: tuple[str, ...] = DEFAULT_CI_METRICS,
+) -> dict[str, float]:
+    """Point metrics plus bootstrap CI bounds, in one flat dict ready for results.json."""
+    out = compute_metrics(y_true, y_pred, y_proba, train_seconds=train_seconds)
+    if y_proba is not None and len(np.unique(y_true)) > 1:
+        out.update(
+            bootstrap_metric_ci(
+                y_true, y_pred, y_proba, metrics=ci_metrics, n_boot=n_boot, seed=seed
+            )
+        )
     return out
 
 
@@ -163,6 +249,37 @@ def plot_metric_bars(
     if ylim is not None:
         ax.set_ylim(*ylim)
     ax.set_title(title or f"{metric} comparison")
+    ax.tick_params(axis="x", rotation=30)
+    fig.tight_layout()
+    fig.savefig(path, dpi=140)
+    plt.close(fig)
+
+
+def plot_metric_bars_with_ci(
+    results: dict[str, dict[str, float]],
+    metric: str,
+    path: Path,
+    title: str | None = None,
+    ylim: tuple[float, float] | None = None,
+) -> None:
+    """Bar chart for one metric with 95% bootstrap CI error bars.
+
+    Reads ``<metric>_ci_low`` / ``<metric>_ci_high`` per model when present; models without
+    CI bounds are drawn with no error bar (zero-length).
+    """
+    names = [n for n, m in results.items() if metric in m]
+    values = np.array([results[n][metric] for n in names], dtype=float)
+    lows = np.array([results[n].get(f"{metric}_ci_low", results[n][metric]) for n in names])
+    highs = np.array([results[n].get(f"{metric}_ci_high", results[n][metric]) for n in names])
+    yerr = np.clip(np.vstack([values - lows, highs - values]), 0.0, None)
+
+    fig, ax = plt.subplots(figsize=(max(6, 0.9 * len(names)), 5))
+    palette = sns.color_palette("crest", n_colors=len(names))
+    ax.bar(names, values, color=palette, yerr=yerr, capsize=4, ecolor="0.3")
+    ax.set_ylabel(metric)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
+    ax.set_title(title or f"{metric} (95% bootstrap CI)")
     ax.tick_params(axis="x", rotation=30)
     fig.tight_layout()
     fig.savefig(path, dpi=140)

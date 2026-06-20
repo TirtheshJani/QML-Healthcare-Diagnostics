@@ -5,7 +5,9 @@ from __future__ import annotations
 import numpy as np
 
 from qml_healthcare.evaluation import (
+    bootstrap_metric_ci,
     compute_metrics,
+    compute_metrics_with_ci,
     dump_results,
     load_results,
     plot_class_balance,
@@ -13,6 +15,7 @@ from qml_healthcare.evaluation import (
     plot_kernel_heatmap,
     plot_loss_curve,
     plot_metric_bars,
+    plot_metric_bars_with_ci,
     plot_pr_curves,
     plot_roc_curves,
 )
@@ -72,6 +75,51 @@ def test_plot_helpers_write_files(tmp_path):
     plot_class_balance(y_true, paths["balance"])
     for p in paths.values():
         assert p.exists() and p.stat().st_size > 1000
+
+
+def test_bootstrap_metric_ci_is_deterministic_and_bracketed():
+    rng = np.random.default_rng(3)
+    y_true = rng.integers(0, 2, 80)
+    y_proba = np.clip(y_true * 0.4 + rng.uniform(0, 0.6, 80), 0, 1)
+    y_pred = (y_proba > 0.5).astype(int)
+
+    ci_a = bootstrap_metric_ci(y_true, y_pred, y_proba, n_boot=200, seed=42)
+    ci_b = bootstrap_metric_ci(y_true, y_pred, y_proba, n_boot=200, seed=42)
+    assert ci_a == ci_b, "same seed must give identical CIs"
+
+    point = compute_metrics(y_true, y_pred, y_proba)
+    for metric in ("roc_auc", "f1", "balanced_accuracy", "accuracy"):
+        lo, hi = ci_a[f"{metric}_ci_low"], ci_a[f"{metric}_ci_high"]
+        assert 0.0 <= lo <= hi <= 1.0
+        assert lo <= point[metric] <= hi
+
+
+def test_bootstrap_metric_ci_skips_auc_without_proba():
+    y_true = np.array([0, 1, 0, 1, 1, 0])
+    y_pred = np.array([0, 1, 1, 1, 0, 0])
+    ci = bootstrap_metric_ci(y_true, y_pred, y_proba=None, n_boot=100, seed=0)
+    assert "roc_auc_ci_low" not in ci
+    assert "f1_ci_low" in ci
+
+
+def test_compute_metrics_with_ci_includes_ci_keys():
+    rng = np.random.default_rng(5)
+    y_true = rng.integers(0, 2, 40)
+    y_proba = rng.uniform(0, 1, 40)
+    y_pred = (y_proba > 0.5).astype(int)
+    m = compute_metrics_with_ci(y_true, y_pred, y_proba, train_seconds=2.0, n_boot=100)
+    assert "roc_auc" in m and "roc_auc_ci_low" in m and "roc_auc_ci_high" in m
+    assert m["train_seconds"] == 2.0
+
+
+def test_plot_metric_bars_with_ci_writes_file(tmp_path):
+    results = {
+        "a": {"roc_auc": 0.7, "roc_auc_ci_low": 0.6, "roc_auc_ci_high": 0.8},
+        "b": {"roc_auc": 0.5},  # no CI bounds -> zero-length error bar
+    }
+    path = tmp_path / "ci_bars.png"
+    plot_metric_bars_with_ci(results, "roc_auc", path, ylim=(0, 1))
+    assert path.exists() and path.stat().st_size > 1000
 
 
 def test_dump_and_load_results_roundtrip(tmp_path):

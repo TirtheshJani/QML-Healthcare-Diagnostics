@@ -17,7 +17,11 @@ def build_feature_map(name: str, n_features: int, reps: int = 2) -> QuantumCircu
     if name == "zz":
         return ZZFeatureMap(feature_dimension=n_features, reps=reps)
     if name == "pauli":
-        return PauliFeatureMap(feature_dimension=n_features, reps=reps, paulis=["Z", "ZZ"])
+        # Z (single-qubit) + XX (X-basis entanglement). Deliberately distinct from the
+        # "zz" map: ZZFeatureMap is exactly PauliFeatureMap(paulis=["Z", "ZZ"]), so using
+        # ["Z", "ZZ"] here would duplicate it. XX entanglement gives a genuinely different
+        # encoding so the three feature maps form a real comparison.
+        return PauliFeatureMap(feature_dimension=n_features, reps=reps, paulis=["Z", "XX"])
     if name == "custom":
         return _custom_feature_map(n_features=n_features, reps=reps)
     raise ValueError(f"Unknown feature map '{name}'. Choose from {FEATURE_MAP_NAMES}.")

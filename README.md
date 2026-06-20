@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/TirtheshJani/QML-Healthcare-Diagnostics/actions/workflows/ci.yml/badge.svg)](https://github.com/TirtheshJani/QML-Healthcare-Diagnostics/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Qiskit 2.x](https://img.shields.io/badge/Qiskit-2.x-6929C4.svg)](https://qiskit.org/)
+[![Qiskit 1.x](https://img.shields.io/badge/Qiskit-1.x-6929C4.svg)](https://qiskit.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Linter: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -120,7 +120,7 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── train_qsvm.py          # QSVM only (--feature-maps zz pauli custom)
 │   ├── train_vqc_qnn.py       # VQC + QNN only
 │   └── update_readme_table.py # Refresh the results table in this README
-├── tests/                     # pytest — 20 deterministic tests, < 5 s
+├── tests/                     # pytest — 28 deterministic tests, fast
 ├── reports/
 │   ├── figures/               # All generated PNGs (committed)
 │   └── results.json           # Latest metrics dump
@@ -177,8 +177,16 @@ All three maps share the same interface: `build_feature_map(name, n_features, re
 | Name | Circuit | Reference |
 |------|---------|-----------|
 | `zz` | `ZZFeatureMap` — H layer → RZ(2φ(x)) → ZZ entanglers | Havlíček et al., 2019 |
-| `pauli` | `PauliFeatureMap` with `paulis=["Z", "ZZ"]` | Qiskit reference |
+| `pauli` | `PauliFeatureMap` with `paulis=["Z", "XX"]` — X-basis entanglement | Qiskit reference |
 | `custom` | H → RZ(2x) per qubit → CZ entanglement (ring) — explicit non-Clifford map | This repo |
+
+> **Why `["Z", "XX"]` and not `["Z", "ZZ"]`?** `ZZFeatureMap` is *exactly*
+> `PauliFeatureMap(paulis=["Z", "ZZ"])`, so the two would produce identical
+> kernels and identical results. The `pauli` map deliberately uses `XX`
+> entanglement so the three feature maps form a genuine comparison rather than
+> two duplicates plus one. A regression test
+> (`tests/test_quantum_kernels.py::test_zz_and_pauli_feature_maps_differ`) locks
+> this in.
 
 The custom map applies a Hadamard to all qubits, encodes each feature as
 `RZ(2xᵢ)`, then entangles adjacent pairs with `CZ` gates. Unlike ZZFeatureMap,
@@ -216,37 +224,58 @@ K(x, x') = |⟨φ(x)|φ(x')⟩|². The kernel matrix is guaranteed PSD by
 
 Both use the `StatevectorSampler` primitive from `qiskit.primitives` for
 exact statevector simulation. The QNN uses a parity interpret function
-(`x % 2`) to produce a 2-class probability output.
+(`x % 2`) to produce a 2-class probability output, trained with one-hot
+cross-entropy loss (`NeuralNetworkClassifier(loss="cross_entropy", one_hot=True)`),
+which is required for a 2-output `SamplerQNN`.
+
+### Uncertainty estimates
+
+Point metrics from a single split can be misleading on a subsampled test set
+(N = 200 for the quantum models). Two complementary checks are reported:
+
+- **Bootstrap confidence intervals (all models).** The test predictions are
+  resampled with replacement (1000 seeded draws) to produce 95% CIs for ROC-AUC,
+  PR-AUC, F1, balanced accuracy, and accuracy. These appear next to ROC-AUC in
+  the results table and as error bars in
+  `reports/figures/roc_auc_ci_comparison.png`. No retraining is needed, so the
+  same procedure applies uniformly to classical and quantum models.
+- **5-fold stratified cross-validation (classical only).** The classical
+  baselines are cheap to refit, so they also report CV mean ± std for ROC-AUC,
+  F1, and balanced accuracy. The quantum models are *not* cross-validated: the
+  fidelity kernel is O(N²) per fold, which is prohibitive on a CPU simulator.
+  This asymmetry is intentional and called out here so the comparison stays
+  honest.
 
 ---
 
 ## Results
 
 > Numbers come from the most recent `reports/results.json` produced by
-> `python scripts/reproduce_all.py`. The synthetic-fallback dataset is used
-> when Kaggle credentials are absent — with real WiDS data the absolute values
-> shift slightly, but **the relative ordering of classical vs. quantum is the
-> same**. See [Honest findings](#honest-findings).
+> `python scripts/reproduce_all.py` on the **synthetic-fallback dataset**
+> (no Kaggle credentials). Real WiDS data was not run in this reproduction.
+> Brackets are 95% bootstrap CIs; the classical rows additionally have 5-fold
+> CV (see [Uncertainty estimates](#uncertainty-estimates)). See
+> [Honest findings](#honest-findings) for what these numbers do and do not show.
 
 <!-- BEGIN_RESULTS_TABLE -->
-| Model | Type | Accuracy | Balanced acc. | ROC-AUC | PR-AUC | F1 | Train (s) |
-|-------|------|---------:|--------------:|--------:|-------:|---:|----------:|
-| Logistic Regression | classical | 0.736 | 0.724 | 0.818 | 0.578 | 0.542 | 0.01 |
-| Random Forest | classical | 0.800 | 0.606 | 0.800 | 0.526 | 0.363 | 0.42 |
-| SVM (RBF) | classical | 0.812 | 0.631 | 0.759 | 0.532 | 0.420 | 1.57 |
-| QSVM (custom feature map) | quantum | 0.690 | 0.690 | 0.745 | 0.717 | 0.699 | 16.29 |
-| VQC | quantum | 0.560 | 0.560 | 0.567 | 0.545 | 0.564 | 8.94 |
-| QSVM (ZZFeatureMap) | quantum | 0.500 | 0.500 | 0.525 | 0.538 | 0.490 | 18.05 |
-| QNN (EstimatorQNN) | quantum | 0.525 | 0.525 | 0.503 | 0.526 | 0.497 | 7.99 |
-| QSVM (PauliFeatureMap) | quantum | 0.510 | 0.510 | 0.499 | 0.480 | 0.515 | 23.07 |
+| Model | Type | Accuracy | Balanced acc. | ROC-AUC [95% CI] | PR-AUC | F1 | Train (s) |
+|-------|------|---------:|--------------:|:----------------|-------:|---:|----------:|
+| Logistic Regression | classical | 0.810 | 0.651 | 0.817 [0.787, 0.845] | 0.578 | 0.460 | 0.01 |
+| Random Forest | classical | 0.808 | 0.646 | 0.792 [0.758, 0.824] | 0.540 | 0.451 | 0.54 |
+| SVM (RBF) | classical | 0.812 | 0.631 | 0.759 [0.721, 0.796] | 0.532 | 0.420 | 1.10 |
+| VQC | quantum | 0.520 | 0.520 | 0.540 [0.457, 0.616] | 0.567 | 0.556 | 77.50 |
+| QSVM (Pauli Z+XX) | quantum | 0.520 | 0.520 | 0.522 [0.440, 0.600] | 0.518 | 0.543 | 174.46 |
+| QSVM (ZZFeatureMap) | quantum | 0.535 | 0.535 | 0.513 [0.434, 0.590] | 0.518 | 0.551 | 104.08 |
+| QSVM (custom feature map) | quantum | 0.490 | 0.490 | 0.513 [0.437, 0.591] | 0.513 | 0.474 | 36.96 |
+| QNN (SamplerQNN) | quantum | 0.500 | 0.500 | 0.506 [0.425, 0.583] | 0.506 | 0.510 | 74.03 |
 <!-- END_RESULTS_TABLE -->
 
 ### Key figures
 
 | | |
 |---|---|
-| ![ROC overlay (classical)](reports/figures/classical_roc.png) | ![Final ROC-AUC comparison](reports/figures/final_comparison.png) |
-| **Classical baselines — ROC** | **All models — ROC-AUC bar chart** |
+| ![ROC overlay (classical)](reports/figures/classical_roc.png) | ![ROC-AUC with 95% CI](reports/figures/roc_auc_ci_comparison.png) |
+| **Classical baselines — ROC** | **All models — ROC-AUC with 95% bootstrap CI** |
 | ![Quantum kernel — ZZ](reports/figures/kernel_heatmap_zz.png) | ![Quantum kernel — custom](reports/figures/kernel_heatmap_custom.png) |
 | **Quantum kernel (ZZ feature map)** | **Quantum kernel (custom feature map)** |
 | ![QSVM ROC overlay](reports/figures/qsvm_roc_overlay.png) | ![Runtime comparison](reports/figures/runtime_comparison.png) |
@@ -260,20 +289,30 @@ kernel heatmaps.
 
 ## Honest findings
 
-- **No quantum advantage at this scale.** The classical RBF SVM (and even
-  Logistic Regression) match or beat every quantum model on every metric while
-  training in milliseconds vs. minutes-to-hours. This is consistent with the
-  broader QML literature for small-N, low-qubit-count, CPU-simulator benchmarks.
+- **The quantum models are not distinguishable from random here.** On this
+  synthetic benchmark at N = 200 and 6 qubits, every quantum model's 95%
+  bootstrap CI for ROC-AUC includes 0.5 (VQC 0.54 [0.46, 0.62], QSVM-Pauli
+  0.52 [0.44, 0.60], QSVM-ZZ 0.51 [0.43, 0.59], QSVM-custom 0.51 [0.44, 0.59],
+  QNN 0.51 [0.43, 0.58]). The honest statement is not "quantum is worse" but
+  "quantum is indistinguishable from chance on this data" — exactly what the CIs
+  are there to make testable.
 
-- **Feature-map choice matters more than repetitions.** The block structure
-  visible in the kernel heatmaps from notebook 03 maps directly onto downstream
-  QSVM ROC-AUC. At `reps=2` the custom H+RZ+CZ map produces visibly cleaner
-  class separation than ZZ.
+- **The classical baselines have real, stable signal.** Logistic Regression
+  reaches ROC-AUC 0.82 [0.79, 0.85] with a CI well above 0.5, and its 5-fold CV
+  mean (0.81 ± 0.01) matches the single-split estimate — so the classical result
+  is not a lucky split. SVM-RBF and Random Forest behave the same way.
+
+- **Feature-map choice is within noise at this scale.** The three QSVM feature
+  maps (ZZ, Pauli Z+XX, custom) land within ~0.01 ROC-AUC of one another and all
+  overlap 0.5. With only N = 200 the fidelity kernel is close to the identity
+  (most off-diagonal entries near 0), so the SVM has little structure to exploit;
+  the near-orthogonal kernel heatmaps in notebook 03 show this directly.
 
 - **Runtime is the bottleneck.** Each QSVM training requires O(N²) circuit
   evaluations; VQC/QNN are linear in N but every COBYLA iteration runs the
-  full forward pass on all training points. Even on Aer's statevector simulator,
-  QSVM is ~10²–10⁴× slower than `sklearn.SVC`.
+  full forward pass on all training points. On the statevector simulator the
+  quantum models take ~37-174 s versus ~0.006-1.1 s for the classical baselines
+  (roughly 10²-10⁴× slower).
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
   identify data-encoding regimes where the quantum kernel is provably
@@ -288,7 +327,7 @@ kernel heatmaps.
 ## Development
 
 ```bash
-make test         # pytest — 20 tests, < 5 s
+make test         # pytest — 28 deterministic tests, fast
 make lint         # ruff + black --check
 make format       # auto-fix formatting and lint
 make notebooks    # execute all notebooks via nbconvert
@@ -297,6 +336,11 @@ pre-commit install
 
 CI runs `ruff`, `black --check`, and `pytest` across Python 3.10 / 3.11 / 3.12
 on every push and pull request.
+
+> **Verified stack.** Most recently reproduced on Windows with Python 3.11 and
+> Qiskit 1.4.5, qiskit-machine-learning 0.8.4, scikit-learn 1.8, pandas 3.0,
+> numpy 2.4. On Windows use `python scripts/reproduce_all.py` (the `make`
+> targets assume a Unix shell).
 
 ### Individual CLI scripts
 
