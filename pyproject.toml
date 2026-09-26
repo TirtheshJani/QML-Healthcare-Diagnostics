@@ -48,6 +48,7 @@ dev = [
     "jupyter",
     "ipykernel",
     "nbconvert",
+    "pylatexenc",  # required by QuantumCircuit.draw("mpl") in notebook 03
 ]
 kaggle = ["kaggle"]
 docs = ["mkdocs-material>=9.5"]
