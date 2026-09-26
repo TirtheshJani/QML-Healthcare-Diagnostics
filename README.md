@@ -144,7 +144,7 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── build_docs_tables.py   # Results table + chart data for the docs site
 │   ├── export_demo_model.py   # Compact logistic regression for the live demo
 │   └── sync_docs_assets.py    # Runs both docs generators and copies figures into docs/
-├── tests/                     # pytest — 48 deterministic tests, fast
+├── tests/                     # pytest — 49 deterministic tests, fast
 ├── reports/
 │   ├── figures/               # All generated PNGs (committed)
 │   ├── results.json           # Latest metrics dump
@@ -455,7 +455,7 @@ kernels, which reproduce the committed QSVM rows at s = 1 exactly. The pipeline 
 ## Development
 
 ```bash
-make test         # pytest — 48 deterministic tests, fast
+make test         # pytest — 49 deterministic tests, fast
 make lint         # ruff + black --check
 make format       # auto-fix formatting and lint
 make notebooks    # execute all notebooks via nbconvert

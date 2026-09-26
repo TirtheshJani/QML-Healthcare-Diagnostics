@@ -280,7 +280,7 @@ def plot_metric_bars_with_ci(
     if ylim is not None:
         ax.set_ylim(*ylim)
     ax.set_title(title or f"{metric} (95% bootstrap CI)")
-    ax.tick_params(axis="x", rotation=30)
+    ax.tick_params(axis="x", rotation=90)  # 30 degrees let long model names overlap
     fig.tight_layout()
     fig.savefig(path, dpi=140)
     plt.close(fig)

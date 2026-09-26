@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from matplotlib.figure import Figure
 
 from qml_healthcare.evaluation import (
     bootstrap_metric_ci,
@@ -120,6 +121,36 @@ def test_plot_metric_bars_with_ci_writes_file(tmp_path):
     path = tmp_path / "ci_bars.png"
     plot_metric_bars_with_ci(results, "roc_auc", path, ylim=(0, 1))
     assert path.exists() and path.stat().st_size > 1000
+
+
+def test_plot_metric_bars_with_ci_tick_labels_do_not_overlap(tmp_path, monkeypatch):
+    """The README's key figure used to print 'random_forest' on top of 'svm_rbf'."""
+    boxes = []
+    original_savefig = Figure.savefig
+
+    def spy(self, *args, **kwargs):
+        out = original_savefig(self, *args, **kwargs)  # draws the figure
+        renderer = self.canvas.get_renderer()
+        boxes.extend(t.get_window_extent(renderer) for t in self.axes[0].get_xticklabels())
+        return out
+
+    monkeypatch.setattr(Figure, "savefig", spy)
+    names = [
+        "logreg",
+        "random_forest",
+        "svm_rbf",
+        "qsvm_custom",
+        "qsvm_pauli",
+        "qsvm_zz",
+        "qnn",
+        "vqc",
+    ]
+    results = {n: {"roc_auc": 0.6, "roc_auc_ci_low": 0.5, "roc_auc_ci_high": 0.7} for n in names}
+    plot_metric_bars_with_ci(results, "roc_auc", tmp_path / "ci_bars.png", ylim=(0, 1))
+
+    assert len(boxes) == len(names)
+    for left, right in zip(boxes, boxes[1:], strict=False):
+        assert not left.overlaps(right)
 
 
 def test_dump_and_load_results_roundtrip(tmp_path):
