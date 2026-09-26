@@ -383,5 +383,76 @@
     "qiskit_machine_learning": "0.8.4",
     "scikit_learn": "1.9.1",
     "numpy": "2.4.6"
+  },
+  "posthoc_tuned_rbf": {
+    "post_hoc": true,
+    "description": "POST-HOC control, designed after the ablation results above were committed: an RBF SVC (C=1) on the same split with gamma = gamma_scale * s**2 over the ablation's s grid, s selected with the same rule on the same validation rows, test scored once. See the docstring of scripts/posthoc_tuned_rbf_control.py.",
+    "gamma_scale": 0.14170975701477884,
+    "sweep": [
+      {
+        "scale": 0.05,
+        "gamma": 0.00035427439253694714,
+        "val_roc_auc": 0.8198892980383984
+      },
+      {
+        "scale": 0.1,
+        "gamma": 0.0014170975701477885,
+        "val_roc_auc": 0.8202830079436764
+      },
+      {
+        "scale": 0.2,
+        "gamma": 0.005668390280591154,
+        "val_roc_auc": 0.820584080224183
+      },
+      {
+        "scale": 0.5,
+        "gamma": 0.03542743925369471,
+        "val_roc_auc": 0.8098612751569049
+      },
+      {
+        "scale": 1.0,
+        "gamma": 0.14170975701477884,
+        "val_roc_auc": 0.7475393130920123
+      }
+    ],
+    "selected_scale": 0.2,
+    "test": {
+      "scale": 0.2,
+      "gamma": 0.005668390280591154,
+      "accuracy": 0.705,
+      "balanced_accuracy": 0.705,
+      "precision": 0.7733333333333333,
+      "recall": 0.58,
+      "f1": 0.6628571428571428,
+      "roc_auc": 0.8097,
+      "pr_auc": 0.8059095179049242,
+      "roc_auc_ci_low": 0.7467803815540457,
+      "roc_auc_ci_high": 0.8645406459939533,
+      "pr_auc_ci_low": 0.7235551789509557,
+      "pr_auc_ci_high": 0.8786129811948282,
+      "f1_ci_low": 0.5792119296859569,
+      "f1_ci_high": 0.7398843930635838,
+      "balanced_accuracy_ci_low": 0.6441506390777795,
+      "balanced_accuracy_ci_high": 0.7683013575423743,
+      "accuracy_ci_low": 0.64,
+      "accuracy_ci_high": 0.7651249999999999
+    },
+    "n_boot": 1000,
+    "seed": 42,
+    "kernel_offdiag_corr_with_tuned_rbf": {
+      "zz": {
+        "fidelity_kernel_scale": 0.05,
+        "corr": 0.5186361459533859
+      },
+      "pauli": {
+        "fidelity_kernel_scale": 0.05,
+        "corr": 0.8498599046365766
+      },
+      "custom": {
+        "fidelity_kernel_scale": 0.1,
+        "corr": 0.9284211036985165
+      }
+    },
+    "scikit_learn": "1.9.1"
   }
 }
