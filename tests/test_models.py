@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+
 import numpy as np
 
 from qml_healthcare.models.classical import cross_validate_baselines, train_baseline
@@ -9,6 +11,7 @@ from qml_healthcare.models.qnn import train_qnn
 from qml_healthcare.models.qsvm import train_qsvm
 from qml_healthcare.models.quantum_kernels import build_feature_map, make_quantum_kernel
 from qml_healthcare.models.vqc import train_vqc
+from qml_healthcare.pipeline import run_all
 
 
 def test_classical_baselines_produce_expected_shapes(small_quantum_data):
@@ -90,3 +93,9 @@ def test_cross_validate_baselines_returns_cv_stats():
         assert {"cv_roc_auc_mean", "cv_roc_auc_std", "cv_f1_mean", "cv_f1_std"} <= s.keys()
         assert 0.0 <= s["cv_roc_auc_mean"] <= 1.0
         assert s["cv_roc_auc_std"] >= 0.0
+
+
+def test_run_all_does_not_take_a_seed_it_would_ignore():
+    """run_all used to accept a seed and silently rerun RANDOM_SEED; every stage uses the
+    config seed, so the parameter is gone rather than misleading."""
+    assert "seed" not in inspect.signature(run_all).parameters
