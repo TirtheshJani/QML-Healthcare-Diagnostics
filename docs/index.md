@@ -49,17 +49,14 @@ quantum, scores above the APACHE risk column alone. See the
     <div class="kpi-label">Models benchmarked</div>
     <div class="kpi-sub">classical + quantum</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-value" data-kpi="slowdown">--</div>
-    <div class="kpi-label">Quantum slowdown</div>
-    <div class="kpi-sub">slowest quantum vs fastest classical, pipeline implementation</div>
-  </div>
 </div>
 
-## The one chart that tells the story
+## Main results table as a chart
 
 Each bar spans the 95% bootstrap confidence interval for ROC-AUC. The dashed line marks 0.5, the
-score of a coin flip. Classical bars sit clearly to the right of chance; every quantum bar crosses it.
+score of a coin flip. Classical bars sit clearly to the right of chance; with the pipeline's encoding
+every quantum bar crosses it. For the rescaled QSVMs and the tuned RBF control, see the
+[bandwidth ablation](findings.md#kernel-bandwidth-ablation).
 
 <div class="chart-card">
   <canvas id="chart-roc-auc" height="220" data-results-url="assets/data/results_data.json"></canvas>
