@@ -25,8 +25,9 @@ classical-versus-quantum gap persists there has not been tested.
 - The fidelity quantum kernel is **O(N squared)**, which forces a small training subsample (N=200) and
   a small feature count (6 qubits). Larger N might change the picture, but it is not feasible on a CPU
   simulator.
-- All quantum models run on an **exact statevector simulator** with no shot noise and no hardware
-  effects. Real devices would add noise, not remove the scaling problem.
+- All quantum models run on a **noiseless statevector simulator** with no hardware effects. The QSVM
+  kernels are exact; the VQC and QNN add 1,024-shot sampling noise (seeded). Real devices would add
+  noise, not remove the scaling problem.
 - The two model families are **not trained or scored on the same rows**. The classical models use the
   full 3,500-row training split with all 29 input columns and are scored on the full 1,000-row test
   split (22.2% positive). The quantum models use a class-balanced 200-row training subsample with the

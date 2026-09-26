@@ -227,8 +227,11 @@ K(x, x') = |⟨φ(x)|φ(x')⟩|². The kernel matrix is guaranteed PSD by
 | **VQC** | `ZZFeatureMap` (input) + `RealAmplitudes` ansatz + cross-entropy loss | COBYLA via `scipy.optimize.minimize` |
 | **QNN** | `PauliFeatureMap` + `RealAmplitudes` via `SamplerQNN` + `NeuralNetworkClassifier` | COBYLA |
 
-Both use the `StatevectorSampler` primitive from `qiskit.primitives` for
-exact statevector simulation. The QNN uses a parity interpret function
+Both use the `StatevectorSampler` primitive from `qiskit.primitives`, which
+samples 1,024 shots per circuit from the exact statevector; the shot sampling
+and the initial weights are seeded from `RANDOM_SEED`, so reruns match. (The
+QSVM kernels are exact: `FidelityQuantumKernel` defaults to Qiskit's reference
+`Sampler`, which returns exact probabilities.) The QNN uses a parity interpret function
 (`x % 2`) to produce a 2-class probability output, trained with one-hot
 cross-entropy loss (`NeuralNetworkClassifier(loss="cross_entropy", one_hot=True)`),
 which is required for a 2-output `SamplerQNN`.

@@ -53,9 +53,11 @@ and balanced accuracy.
 
 ## Quantum models
 
-All quantum models use exact, shot-free simulation (no hardware) at 6 qubits. The VQC and QNN use
-Qiskit's `StatevectorSampler`; the QSVM kernels use the default `ComputeUncompute` fidelity with
-Qiskit's reference `Sampler`. Feature maps and ansatzes use `reps = 2`, except the QNN feature map,
+All quantum models run on a noiseless simulator (no hardware) at 6 qubits. The QSVM kernels are
+exact: they use the default `ComputeUncompute` fidelity with Qiskit's reference `Sampler`, which
+returns exact probabilities. The VQC and QNN use Qiskit's `StatevectorSampler`, which samples 1,024
+shots per circuit from the exact statevector; the shot sampling and the initial weights are both
+seeded from `RANDOM_SEED`. Feature maps and ansatzes use `reps = 2`, except the QNN feature map,
 which uses `reps = 1`.
 
 ### Quantum SVM with three feature maps
