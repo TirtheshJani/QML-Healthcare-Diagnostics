@@ -54,6 +54,23 @@ def test_qnn_trains_on_tiny_quantum_data(small_quantum_data):
     assert fitted.train_seconds >= 0.0
 
 
+def test_vqc_is_deterministic(small_quantum_data):
+    # Initial weights and sampler shots must both be seeded, or reruns change the metrics.
+    X_train, y_train, X_test, _ = small_quantum_data
+    a = train_vqc(X_train, y_train, X_test, n_features=X_train.shape[1], reps=1, maxiter=3)
+    b = train_vqc(X_train, y_train, X_test, n_features=X_train.shape[1], reps=1, maxiter=3)
+    np.testing.assert_array_equal(a.y_proba, b.y_proba)
+    assert a.loss_history == b.loss_history
+
+
+def test_qnn_is_deterministic(small_quantum_data):
+    X_train, y_train, X_test, _ = small_quantum_data
+    a = train_qnn(X_train, y_train, X_test, n_features=X_train.shape[1], reps=1, maxiter=3)
+    b = train_qnn(X_train, y_train, X_test, n_features=X_train.shape[1], reps=1, maxiter=3)
+    np.testing.assert_array_equal(a.y_proba, b.y_proba)
+    assert a.loss_history == b.loss_history
+
+
 def test_cross_validate_baselines_returns_cv_stats():
     rng = np.random.default_rng(1)
     X = rng.normal(size=(60, 4))

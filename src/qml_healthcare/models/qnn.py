@@ -11,6 +11,7 @@ from qiskit_machine_learning.algorithms import NeuralNetworkClassifier
 from qiskit_machine_learning.neural_networks import SamplerQNN
 from scipy.optimize import minimize
 
+from qml_healthcare.config import RANDOM_SEED
 from qml_healthcare.models._base import FittedModel
 from qml_healthcare.models.quantum_kernels import build_feature_map
 
@@ -22,8 +23,12 @@ def train_qnn(
     n_features: int,
     reps: int = 2,
     maxiter: int = 60,
+    seed: int = RANDOM_SEED,
 ) -> FittedModel:
-    """Train a SamplerQNN classifier (PauliFeatureMap + RealAmplitudes); return predictions."""
+    """Train a SamplerQNN classifier (PauliFeatureMap + RealAmplitudes); return predictions.
+
+    ``seed`` fixes the initial weights and the sampler's shot sampling, so reruns match.
+    """
     loss_history: list[float] = []
 
     def callback(weights: np.ndarray, loss: float) -> None:
@@ -43,7 +48,7 @@ def train_qnn(
         weight_params=list(ansatz.parameters),
         interpret=lambda x: int(x) % 2,
         output_shape=2,
-        sampler=StatevectorSampler(),
+        sampler=StatevectorSampler(seed=seed),
     )
 
     classifier = NeuralNetworkClassifier(
@@ -52,6 +57,7 @@ def train_qnn(
         one_hot=True,
         optimizer=cobyla_optimizer,
         callback=callback,
+        initial_point=np.random.default_rng(seed).random(qnn.num_weights),
     )
 
     t0 = time.perf_counter()

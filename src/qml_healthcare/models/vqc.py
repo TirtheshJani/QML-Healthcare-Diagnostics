@@ -10,6 +10,7 @@ from qiskit.primitives import StatevectorSampler
 from qiskit_machine_learning.algorithms import VQC
 from scipy.optimize import minimize
 
+from qml_healthcare.config import RANDOM_SEED
 from qml_healthcare.models._base import FittedModel
 
 
@@ -20,8 +21,12 @@ def train_vqc(
     n_features: int,
     reps: int = 2,
     maxiter: int = 60,
+    seed: int = RANDOM_SEED,
 ) -> FittedModel:
-    """Train a VQC (ZZFeatureMap + RealAmplitudes) via COBYLA; return predictions."""
+    """Train a VQC (ZZFeatureMap + RealAmplitudes) via COBYLA; return predictions.
+
+    ``seed`` fixes the initial weights and the sampler's shot sampling, so reruns match.
+    """
     loss_history: list[float] = []
 
     def callback(weights: np.ndarray, loss: float) -> None:
@@ -30,12 +35,14 @@ def train_vqc(
     def cobyla_optimizer(fun, x0, jac=None, bounds=None):  # noqa: ARG001
         return minimize(fun, x0, method="COBYLA", options={"maxiter": maxiter, "rhobeg": 0.5})
 
+    ansatz = RealAmplitudes(n_features, reps=reps)
     vqc = VQC(
         feature_map=ZZFeatureMap(feature_dimension=n_features, reps=reps),
-        ansatz=RealAmplitudes(n_features, reps=reps),
+        ansatz=ansatz,
         optimizer=cobyla_optimizer,
         callback=callback,
-        sampler=StatevectorSampler(),
+        sampler=StatevectorSampler(seed=seed),
+        initial_point=np.random.default_rng(seed).random(ansatz.num_parameters),
     )
 
     t0 = time.perf_counter()
