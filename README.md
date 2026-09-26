@@ -237,9 +237,11 @@ Both use the `StatevectorSampler` primitive from `qiskit.primitives`, which
 samples 1,024 shots per circuit from the exact statevector; the shot sampling
 and the initial weights are seeded from `RANDOM_SEED`, so reruns match. (The
 QSVM kernels are exact: `FidelityQuantumKernel` defaults to Qiskit's reference
-`Sampler`, which returns exact probabilities.) The QNN uses a parity interpret function
-(`x % 2`) to produce a 2-class probability output, trained with one-hot
-cross-entropy loss (`NeuralNetworkClassifier(loss="cross_entropy", one_hot=True)`),
+`Sampler`, which returns exact probabilities.) The QNN's interpret function
+`x % 2` reads out qubit 0, not the parity of the bitstring: Qiskit orders bits
+little-endian, so `x % 2` is qubit 0's bit, a Z measurement on that qubit. That gives
+a 2-class probability output, trained with one-hot cross-entropy loss
+(`NeuralNetworkClassifier(loss="cross_entropy", one_hot=True)`),
 which is required for a 2-output `SamplerQNN`.
 
 ### Uncertainty estimates

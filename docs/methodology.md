@@ -79,8 +79,10 @@ through the `StatevectorSampler`. The per-iteration loss is logged for the train
 
 ### Quantum Neural Network (QNN)
 
-A `PauliFeatureMap` composed with a `RealAmplitudes` ansatz, wrapped in a `SamplerQNN` with a parity
-interpretation and one-hot cross-entropy loss, trained through a `NeuralNetworkClassifier` with COBYLA.
+A `PauliFeatureMap` composed with a `RealAmplitudes` ansatz, wrapped in a `SamplerQNN` and trained
+through a `NeuralNetworkClassifier` with one-hot cross-entropy loss and COBYLA. Its interpret function
+`x % 2` reads out qubit 0, not the parity of the bitstring: Qiskit orders bits little-endian, so
+`x % 2` is qubit 0's bit, a Z measurement on that qubit.
 
 ## Metrics and uncertainty
 
