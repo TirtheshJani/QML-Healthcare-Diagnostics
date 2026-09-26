@@ -140,7 +140,7 @@ seeing the results. The VQC and QNN use the same encoding and were not rerun. Th
   </figure>
   <figure>
     <img src="assets/figures/runtime_comparison.png" alt="Training time by model" loading="lazy">
-    <figcaption>Training time by model (log scale)</figcaption>
+    <figcaption>Training time by model (seconds)</figcaption>
   </figure>
 </div>
 

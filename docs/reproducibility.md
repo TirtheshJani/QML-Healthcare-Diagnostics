@@ -54,7 +54,8 @@ reproduces the same metrics; only the wall-clock training times change.
 
 Without Kaggle credentials the pipeline uses the synthetic fallback, so the numbers shown on this site
 come from synthetic data. They are internally consistent and reproducible, but they are not the real
-WiDS results. To run on the real data, place a Kaggle API token at `~/.kaggle/kaggle.json` and re-run.
+WiDS results. To run on the real data, place a Kaggle API token at `~/.kaggle/kaggle.json`, delete
+the synthetic fallback at `data/raw/training_v2.csv` (otherwise it is reused), and re-run.
 
 ## Rebuild this site
 

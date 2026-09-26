@@ -75,12 +75,16 @@ make all
 
 The pipeline automatically falls back to synthetic data when Kaggle credentials
 are absent, so **no account is needed** to run a complete experiment.
+A full run took about an hour (60 and 64 minutes in two runs on a shared 4-core
+Linux machine), almost all of it in the QSVM stage; `python scripts/train_baseline.py`
+alone finishes in under a minute (32 s on the same machine).
 
 ### Optional: real WiDS data
 
 ```bash
 # Put your Kaggle API key in ~/.kaggle/kaggle.json, then:
 pip install -e ".[kaggle]"
+rm data/raw/training_v2.csv         # remove the synthetic fallback so the real data is downloaded
 python scripts/reproduce_all.py     # will download training_v2.csv automatically
 ```
 
@@ -112,10 +116,13 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── models/
 │   │   ├── _base.py           # FittedModel dataclass (shared by all trainers)
 │   │   ├── classical.py       # SVM-RBF, Logistic Regression, Random Forest
-│   │   ├── quantum_kernels.py # Feature maps + FidelityQuantumKernel wrapper
+│   │   ├── quantum_kernels.py # Feature maps, FidelityQuantumKernel wrapper, exact statevector kernel
 │   │   ├── qsvm.py            # QSVC trainer
 │   │   ├── vqc.py             # VQC trainer (ZZFeatureMap + RealAmplitudes)
 │   │   └── qnn.py             # SamplerQNN + NeuralNetworkClassifier trainer
+│   ├── reporting/
+│   │   └── tables.py          # results.json -> markdown tables (README + docs site)
+│   ├── bandwidth.py           # Helpers for the kernel bandwidth ablation
 │   ├── evaluation.py          # Metrics computation + all plot helpers
 │   └── pipeline.py            # Orchestration: run_data / run_baseline / run_qsvm
 │                              #               / run_bonus / run_reports / run_all
@@ -132,18 +139,26 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── train_baseline.py      # Classical baselines only
 │   ├── train_qsvm.py          # QSVM only (--feature-maps zz pauli custom)
 │   ├── train_vqc_qnn.py       # VQC + QNN only
-│   └── update_readme_table.py # Refresh the results table in this README
+│   ├── ablate_kernel_bandwidth.py # Pre-specified kernel bandwidth ablation (QSVM)
+│   ├── update_readme_table.py # Refresh the results table in this README
+│   ├── build_docs_tables.py   # Results table + chart data for the docs site
+│   ├── export_demo_model.py   # Compact logistic regression for the live demo
+│   └── sync_docs_assets.py    # Runs both docs generators and copies figures into docs/
 ├── tests/                     # pytest — 39 deterministic tests, fast
 ├── reports/
 │   ├── figures/               # All generated PNGs (committed)
-│   └── results.json           # Latest metrics dump
+│   ├── results.json           # Latest metrics dump
+│   └── bandwidth_ablation.json # Kernel bandwidth ablation results
+├── docs/                      # MkDocs Material site (live site + demo)
+├── mkdocs.yml                 # Site configuration
 ├── data/{raw,processed}/      # Dataset files (gitignored)
 ├── pyproject.toml             # Build, deps, ruff/black/pytest/coverage config
 ├── requirements.txt           # pip install -r alternative
 ├── environment.yml            # Conda environment spec
 ├── Makefile                   # Convenience targets
 ├── .pre-commit-config.yaml    # ruff + black hooks
-└── .github/workflows/ci.yml   # Matrix CI: Python 3.10 / 3.11 / 3.12
+├── .github/workflows/ci.yml   # Matrix CI: Python 3.10 / 3.11 / 3.12
+└── .github/workflows/docs.yml # Builds the docs site and deploys it to GitHub Pages
 ```
 
 ---
