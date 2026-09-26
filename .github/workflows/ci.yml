@@ -38,4 +38,4 @@ jobs:
         run: pytest --cov=qml_healthcare --cov-report=term-missing
 
       - name: Lint notebooks with nbqa
-        run: nbqa ruff notebooks/ || echo "nbqa skipped (no notebooks yet)"
+        run: nbqa ruff notebooks/
