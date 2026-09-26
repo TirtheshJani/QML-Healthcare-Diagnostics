@@ -40,9 +40,11 @@ statistically indistinguishable from a coin flip on this test set.
    0.484 [0.399, 0.559], and the VQC at 0.437 [0.353, 0.518]. For the QSVMs the cause is the unscaled
    angle encoding, which leaves the kernel at the random-state value; with the input scale picked on
    validation data they reach 0.70 to 0.80 (see below). The VQC and QNN are also under-trained: 18
-   weights, 60 COBYLA loss evaluations, and a final training loss of 0.955 and 0.950 bits against 1.0
-   bit for a constant prediction. Before they were seeded, an earlier committed run gave them 0.540 and
-   0.506; the bootstrap intervals cover test-set sampling only, not that seed variation.
+   weights, 60 COBYLA loss evaluations, and a final training loss of about 0.955 and 0.950 bits
+   against 1.0 bit for a constant prediction (read from the loss curves in
+   `reports/figures/vqc_loss.png` and `qnn_loss.png`). Before they were seeded, an earlier committed
+   run gave them 0.540 and 0.506; the bootstrap intervals cover test-set sampling only, not that seed
+   variation.
 
 2. **The classical baselines have stable, real signal.** Logistic Regression reaches ROC-AUC 0.817
    [0.787, 0.845], and 5-fold cross-validation agrees closely (0.810 plus or minus 0.013), so the
@@ -91,7 +93,7 @@ committed run, not a blind test.
 | Model | s | Kernel off-diag. mean | Test ROC-AUC [95% CI] |
 |---|---:|---:|:---|
 | QSVM ZZ, pipeline encoding | 1 | 0.0163 | 0.513 [0.434, 0.590] |
-| QSVM ZZ, s chosen on validation | 0.05 | 0.2399 | 0.701 [0.632, 0.769] |
+| QSVM ZZ, s chosen on validation | 0.05 | 0.2399 | 0.701 [0.631, 0.769] |
 | QSVM Pauli Z+XX, pipeline encoding | 1 | 0.0160 | 0.522 [0.440, 0.600] |
 | QSVM Pauli Z+XX, s chosen on validation | 0.05 | 0.3600 | 0.728 [0.660, 0.801] |
 | QSVM custom, pipeline encoding | 1 | 0.0194 | 0.513 [0.437, 0.591] |

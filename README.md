@@ -77,9 +77,8 @@ make all
 
 The pipeline automatically falls back to synthetic data when Kaggle credentials
 are absent, so **no account is needed** to run a complete experiment.
-A full run took about an hour (60 and 64 minutes in two runs on a shared 4-core
-Linux machine), almost all of it in the QSVM stage; `python scripts/train_baseline.py`
-alone finishes in under a minute (32 s on the same machine).
+A full run took about an hour on a shared 4-core Linux machine, almost all of it in
+the QSVM stage; `python scripts/train_baseline.py` alone finishes in under a minute.
 
 ### Optional: real WiDS data
 
@@ -372,7 +371,7 @@ rule fixed before the committed run, not a blind test.
 | Model, same 200-row, 6-feature split | s | Kernel off-diag. mean | Test ROC-AUC [95% CI] |
 |---|---:|---:|:---|
 | QSVM ZZ, pipeline encoding | 1 | 0.0163 | 0.513 [0.434, 0.590] |
-| QSVM ZZ, s chosen on validation | 0.05 | 0.2399 | 0.701 [0.632, 0.769] |
+| QSVM ZZ, s chosen on validation | 0.05 | 0.2399 | 0.701 [0.631, 0.769] |
 | QSVM Pauli Z+XX, pipeline encoding | 1 | 0.0160 | 0.522 [0.440, 0.600] |
 | QSVM Pauli Z+XX, s chosen on validation | 0.05 | 0.3600 | 0.728 [0.660, 0.801] |
 | QSVM custom, pipeline encoding | 1 | 0.0194 | 0.513 [0.437, 0.591] |
@@ -434,8 +433,9 @@ RBF control is not in it.
 - **The VQC and QNN are under-trained.** Each has 18 trainable weights
   (`RealAmplitudes(6, reps=2)`) and gets 60 COBYLA loss evaluations.
   qiskit-machine-learning's cross-entropy uses log base 2, so predicting 0.5 for
-  every row costs 1.0 bit; the committed runs end at 0.955 bits (VQC) and 0.950 bits
-  (QNN), barely below that (`reports/figures/vqc_loss.png`, `qnn_loss.png`). Their
+  every row costs 1.0 bit; the committed runs end at about 0.955 bits (VQC) and 0.950
+  bits (QNN), barely below that, as read from the loss curves in
+  `reports/figures/vqc_loss.png` and `qnn_loss.png`. Their
   CIs cover test-set sampling only: an earlier, unseeded committed run gave VQC 0.540
   and QNN 0.506, against 0.437 and 0.484 now. So their chance-level rows say little
   about what these circuits could learn with a larger optimization budget or a
@@ -462,9 +462,7 @@ RBF control is not in it.
   classical baselines (roughly 30× to 30,000× slower). That gap belongs to the
   implementation, not to simulating 6 qubits: an exact statevector kernel simulates
   each point once, and the exact training and test kernels plus the SVC fit take
-  0.9 to 5.6 s per feature map (`reports/bandwidth_ablation.json`). Timed on the
-  same shared 4-core Linux machine, the pipeline's QSVC fit took 68 to 349 s per
-  feature map and the exact training kernel plus SVC fit took 0.3 to 1.8 s.
+  0.9 to 5.6 s per feature map (`reports/bandwidth_ablation.json`).
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
   identify data-encoding regimes where the quantum kernel is provably

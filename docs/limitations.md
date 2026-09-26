@@ -48,8 +48,8 @@ to logistic regression's 0.817 [0.787, 0.845].
   QNN use the same encoding and were not rerun with a rescaled one.
 - The **VQC and QNN are under-trained.** Each has 18 trainable weights (`RealAmplitudes(6, reps=2)`)
   and gets 60 COBYLA loss evaluations. qiskit-machine-learning's cross-entropy uses log base 2, so a
-  constant 0.5 prediction costs 1.0 bit; the committed runs end at 0.955 bits (VQC) and 0.950 bits
-  (QNN).
+  constant 0.5 prediction costs 1.0 bit; the committed runs end at about 0.955 bits (VQC) and 0.950
+  bits (QNN), read from the loss curves in `reports/figures/vqc_loss.png` and `qnn_loss.png`.
 - All quantum models run on a **noiseless statevector simulator** with no hardware effects. The QSVM
   kernels are exact; the VQC and QNN add 1,024-shot sampling noise (seeded). Real devices would add
   noise, not remove the scaling problem.
