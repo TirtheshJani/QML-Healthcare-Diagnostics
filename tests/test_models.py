@@ -54,6 +54,15 @@ def test_qnn_trains_on_tiny_quantum_data(small_quantum_data):
     assert fitted.train_seconds >= 0.0
 
 
+def test_vqc_and_qnn_record_loss_history(small_quantum_data):
+    # The loss curves in reports/figures/ are drawn from loss_history, so it must not be empty.
+    X_train, y_train, X_test, _ = small_quantum_data
+    for train in (train_vqc, train_qnn):
+        fitted = train(X_train, y_train, X_test, n_features=X_train.shape[1], reps=1, maxiter=3)
+        assert len(fitted.loss_history) > 0
+        assert np.isfinite(fitted.loss_history).all()
+
+
 def test_vqc_is_deterministic(small_quantum_data):
     # Initial weights and sampler shots must both be seeded, or reruns change the metrics.
     X_train, y_train, X_test, _ = small_quantum_data

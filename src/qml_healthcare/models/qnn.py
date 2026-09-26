@@ -31,11 +31,16 @@ def train_qnn(
     """
     loss_history: list[float] = []
 
-    def callback(weights: np.ndarray, loss: float) -> None:
-        loss_history.append(float(loss))
-
     def cobyla_optimizer(fun, x0, jac=None, bounds=None):  # noqa: ARG001
-        return minimize(fun, x0, method="COBYLA", options={"maxiter": maxiter, "rhobeg": 0.5})
+        # qiskit-machine-learning only invokes `callback` for its own SciPyOptimizer classes,
+        # not for a plain callable like this one, so record each loss evaluation here.
+        def logged_fun(weights: np.ndarray) -> float:
+            loss = fun(weights)
+            loss_history.append(float(loss))
+            return loss
+
+        options = {"maxiter": maxiter, "rhobeg": 0.5}
+        return minimize(logged_fun, x0, method="COBYLA", options=options)
 
     feature_map = build_feature_map("pauli", n_features=n_features, reps=1)
     ansatz = RealAmplitudes(n_features, reps=reps)
@@ -56,7 +61,6 @@ def train_qnn(
         loss="cross_entropy",
         one_hot=True,
         optimizer=cobyla_optimizer,
-        callback=callback,
         initial_point=np.random.default_rng(seed).random(qnn.num_weights),
     )
 
