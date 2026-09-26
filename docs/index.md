@@ -20,10 +20,13 @@ Qiskit, fully seeded, and honest about what it found.
 </section>
 
 <div class="callout-headline" markdown>
-**Headline:** on the synthetic data at this scale, the classical models win cleanly and the quantum
-models sit at chance. Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845]; every quantum
-model's 95% confidence interval includes 0.5, while training roughly 30 to 30,000 times slower. That
-negative result is the point: it is what a careful audit actually shows.
+**Headline:** on the synthetic data, Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845].
+With the pipeline's unscaled angle encoding every quantum model's 95% confidence interval includes
+0.5. A pre-specified bandwidth ablation traces the QSVM result to that encoding: the kernels sit at the
+random-state value, and with the input scale picked on validation data the QSVMs reach test ROC-AUC
+0.70 to 0.80, the best of them level with logistic regression on the same 200 rows. On those rows no
+model, classical or quantum, scores above the APACHE risk column alone. See the
+[findings](findings.md#kernel-bandwidth-ablation).
 </div>
 
 ## At a glance
@@ -47,7 +50,7 @@ negative result is the point: it is what a careful audit actually shows.
   <div class="kpi-card">
     <div class="kpi-value" data-kpi="slowdown">--</div>
     <div class="kpi-label">Quantum slowdown</div>
-    <div class="kpi-sub">slowest quantum vs fastest classical</div>
+    <div class="kpi-sub">slowest quantum vs fastest classical, pipeline implementation</div>
   </div>
 </div>
 

@@ -37,7 +37,12 @@ The chain lives in `qml_healthcare.data.preprocess` and runs
 - **`top_k_features`** uses `SelectKBest` with the ANOVA F-statistic to choose the `k = 6` strongest
   features for the quantum encoding (six qubits).
 - **`subsample_for_quantum`** draws a class-balanced subsample of `N = 200` training points, because
-  the fidelity kernel is O(N squared) and does not scale on a CPU simulator.
+  the pipeline's `FidelityQuantumKernel` runs one ComputeUncompute circuit per kernel entry (O(N
+  squared) circuits), which dominates its runtime. An exact statevector kernel on the same rows takes
+  seconds (see the bandwidth ablation below).
+
+The quantum models receive these `StandardScaler` z-scores directly as rotation angles, with no
+further rescaling.
 
 ## Classical baselines
 
@@ -84,6 +89,21 @@ through a `NeuralNetworkClassifier` with one-hot cross-entropy loss and COBYLA. 
 `x % 2` reads out qubit 0, not the parity of the bitstring: Qiskit orders bits little-endian, so
 `x % 2` is qubit 0's bit, a Z measurement on that qubit.
 
+Both variational models have 18 trainable weights (`RealAmplitudes(6, reps=2)`) and get 60 COBYLA loss
+evaluations, which leaves them under-trained (see [Limitations](limitations.md)).
+
+### Kernel bandwidth ablation
+
+`scripts/ablate_kernel_bandwidth.py` was added after an audit found the QSVM kernels at the
+random-state fidelity. Its design was fixed and committed before it was run. It computes exact fidelity
+kernels from statevector overlaps (`quantum_kernels.exact_fidelity_kernel`, tested against
+`FidelityQuantumKernel` to 1e-8), multiplies the quantum inputs by a scale s in
+{0.05, 0.1, 0.2, 0.5, 1}, and fits the same `SVC` the QSVC fits. For each feature map it picks the s
+with the highest ROC-AUC on the validation split restricted to the same six features (ties go to the
+larger s), then scores the test rows only at s = 1 and at the chosen s. As matched controls it refits
+the classical baselines on the same 200-row, 6-feature split and scores the APACHE probability column
+alone. Results are in `reports/bandwidth_ablation.json` and on the [Findings](findings.md) page.
+
 ## Metrics and uncertainty
 
 `qml_healthcare.evaluation` computes accuracy, balanced accuracy, precision, recall, F1, ROC-AUC, and
@@ -91,6 +111,8 @@ PR-AUC. For each test-set metric, `bootstrap_metric_ci` draws 1000 seeded bootst
 a 95% percentile confidence interval (resamples with a single class are discarded, since AUC and F1
 are undefined there).
 
-Classical models also get 5-fold cross-validation; the quantum models do not, because refitting an
-O(N squared) kernel per fold is prohibitive on a simulator. That asymmetry is intentional and is noted
-in [Limitations](limitations.md).
+The bootstrap covers test-set sampling only; it does not capture seed or optimizer variation.
+
+Classical models also get 5-fold cross-validation; the quantum models do not, because each refit of
+the pipeline's ComputeUncompute kernel takes minutes. That asymmetry is intentional and is noted in
+[Limitations](limitations.md).

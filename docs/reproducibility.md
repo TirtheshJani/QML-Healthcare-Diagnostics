@@ -39,6 +39,12 @@ py -3.11 scripts/reproduce_all.py --n 200 --k 6 --reps 2 --maxiter 60
 
 Individual stages are also available as scripts: `scripts/download_data.py`,
 `scripts/train_baseline.py`, `scripts/train_qsvm.py`, and `scripts/train_vqc_qnn.py`.
+The kernel bandwidth ablation runs separately, reads the committed `reports/results.json` without
+changing it, and writes `reports/bandwidth_ablation.json` and its figure:
+
+```bash
+py -3.11 scripts/ablate_kernel_bandwidth.py
+```
 
 ## Determinism and the data caveat
 

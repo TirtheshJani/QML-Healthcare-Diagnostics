@@ -15,10 +15,11 @@ src/qml_healthcare/
     preprocess.py      select_features -> clean -> make_splits -> scale -> top_k -> subsample
   models/
     classical.py       SVM-RBF, Logistic Regression, Random Forest, + 5-fold CV
-    quantum_kernels.py  three feature maps, FidelityQuantumKernel
+    quantum_kernels.py  three feature maps, FidelityQuantumKernel, exact statevector kernel
     qsvm.py            QSVC trainer
     vqc.py             Variational Quantum Classifier
     qnn.py             SamplerQNN + NeuralNetworkClassifier
+  bandwidth.py         helpers for the kernel bandwidth ablation
   evaluation.py        metrics, bootstrap CIs, all plot_* helpers, results IO
   reporting/
     tables.py          render results.json as markdown tables (README + docs)

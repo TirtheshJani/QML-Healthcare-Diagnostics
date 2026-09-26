@@ -18,7 +18,10 @@
 > **All results reported here come from that synthetic fallback, not the real
 > WiDS data.** On it, Logistic Regression is the strongest model (ROC-AUC 0.817,
 > 95% bootstrap CI [0.787, 0.845]) and every quantum model's ROC-AUC CI
-> includes 0.5, so the quantum models are at chance.
+> includes 0.5, so the quantum models are at chance. A pre-specified
+> [kernel bandwidth ablation](#kernel-bandwidth-ablation) traces the QSVM null to
+> the unscaled angle encoding: with the input scale picked on validation data,
+> QSVM test ROC-AUC rises to 0.70 to 0.80.
 
 **Live site and interactive demo:** <https://tirtheshjani.github.io/QML-Healthcare-Diagnostics/>
 (documentation, interactive charts, and a client-side classical prediction demo, built with
@@ -257,10 +260,17 @@ Point metrics from a single split can be misleading on a subsampled test set
   same procedure applies uniformly to classical and quantum models.
 - **5-fold stratified cross-validation (classical only).** The classical
   baselines are cheap to refit, so they also report CV mean ± std for ROC-AUC,
-  F1, and balanced accuracy. The quantum models are *not* cross-validated: the
-  fidelity kernel is O(N²) per fold, which is prohibitive on a CPU simulator.
-  This asymmetry is intentional and called out here so the comparison stays
-  honest.
+  F1, and balanced accuracy. The quantum models are *not* cross-validated. The
+  pipeline's `FidelityQuantumKernel` runs one ComputeUncompute circuit per kernel
+  entry, which is what makes each QSVM fit take minutes here; an exact 6-qubit
+  statevector kernel on the same rows takes seconds (see
+  [Kernel bandwidth ablation](#kernel-bandwidth-ablation)), so this is a choice,
+  not a limit of simulating 6 qubits. It is called out here so the comparison
+  stays honest.
+
+The bootstrap intervals cover test-set sampling only. They do not capture seed or
+optimizer variation, which is large for the VQC and QNN: reseeding moved VQC
+ROC-AUC from 0.540 to 0.437.
 
 ---
 
@@ -281,6 +291,16 @@ Point metrics from a single split can be misleading on a subsampled test set
 > slower Linux machine after their seeding was fixed, while the other rows come
 > from the original run. See
 > [Honest findings](#honest-findings) for what these numbers do and do not show.
+>
+> The synthetic label favours logistic regression by construction.
+> `generate_synthetic_icu` draws each outcome from sigmoid(severity - 2.7 + noise),
+> where severity is a weighted sum of 13 inputs (age, vitals, labs, GCS components,
+> elective surgery; linear in all but temperature, which enters as |temp - 37|) and the
+> noise is Gaussian with standard deviation 0.5. The APACHE hospital-death-probability
+> column is sigmoid(severity - 2.5) plus Gaussian noise (standard deviation 0.04). So
+> logistic regression is close to correctly specified, and the APACHE column alone, with
+> no model, scores ROC-AUC 0.814 [0.784, 0.844] on the full test split, next to
+> logistic regression's 0.817 [0.787, 0.845] (`reports/bandwidth_ablation.json`).
 
 <!-- BEGIN_RESULTS_TABLE -->
 | Model | Type | Accuracy | Balanced acc. | ROC-AUC [95% CI] | PR-AUC | F1 | Train (s) |
@@ -310,37 +330,102 @@ All figures are generated to `reports/figures/`; the pipeline also produces
 per-model confusion matrices, PR curves, VQC/QNN loss curves, and Pauli
 kernel heatmaps.
 
+### Kernel bandwidth ablation
+
+The pipeline feeds the `StandardScaler` z-scores of the six selected features
+(from -2.85 to 3.18 on the quantum training rows) straight into the rotation angles.
+At that scale the fidelity kernel carries almost no information about the inputs: the
+mean off-diagonal entry of the 200 x 200 training kernel is 0.0160 to 0.0194, against
+1/2^6 = 0.0156 for two random 6-qubit states. This is the exponential concentration
+described by Thanasilp et al. (2024), and the input scale is the kernel bandwidth
+studied by Shaydulin & Wild (arXiv:2111.05451).
+
+`scripts/ablate_kernel_bandwidth.py` tests this. It was added after an audit found the
+concentration, and its design was committed before it was run: multiply the inputs by
+s in {0.05, 0.1, 0.2, 0.5, 1}, pick s for each feature map by ROC-AUC on the pipeline's
+500-row validation split (otherwise unused), and score the test rows only at s = 1 and
+at the chosen s, with the same bootstrap as the main table. It uses exact statevector
+kernels, which reproduce the committed QSVM rows at s = 1 exactly. The pipeline and
+`reports/results.json` are unchanged.
+
+| Model, same 200-row, 6-feature split | s | Kernel off-diag. mean | Test ROC-AUC [95% CI] |
+|---|---:|---:|:---|
+| QSVM ZZ, pipeline encoding | 1 | 0.0163 | 0.513 [0.434, 0.590] |
+| QSVM ZZ, s chosen on validation | 0.05 | 0.2399 | 0.701 [0.632, 0.769] |
+| QSVM Pauli Z+XX, pipeline encoding | 1 | 0.0160 | 0.522 [0.440, 0.600] |
+| QSVM Pauli Z+XX, s chosen on validation | 0.05 | 0.3600 | 0.728 [0.660, 0.801] |
+| QSVM custom, pipeline encoding | 1 | 0.0194 | 0.513 [0.437, 0.591] |
+| QSVM custom, s chosen on validation | 0.1 | 0.7755 | 0.798 [0.737, 0.854] |
+| Logistic regression | | | 0.794 [0.731, 0.851] |
+| Random forest | | | 0.743 [0.673, 0.808] |
+| SVM (RBF) | | | 0.708 [0.635, 0.781] |
+| APACHE probability column alone (no model) | | | 0.812 [0.750, 0.869] |
+
+![Kernel bandwidth ablation](reports/figures/bandwidth_ablation.png)
+
+- With the scale chosen on validation data every QSVM is clear of chance (0.70 to
+  0.80), and logistic regression reaches 0.794 on the same 200 rows and 6 features.
+  So the chance-level QSVM rows in the main table come from the unscaled encoding, not
+  from N = 200 or from using 6 features.
+- The best kernel (custom, s = 0.1) is level with logistic regression on these rows
+  (0.798 against 0.794, with nearly the same CI); ZZ and Pauli stay below it. No
+  model's point estimate beats the APACHE column alone (0.812), which is one of the
+  six encoded features.
+- For ZZ and Pauli the chosen s = 0.05 is the smallest value on the grid, so a smaller
+  s might score higher; the grid was not extended after seeing the results. The VQC
+  and QNN use the same unscaled encoding and were not rerun here.
+- Numbers and wall times are in `reports/bandwidth_ablation.json`.
+
 ---
 
 ## Honest findings
 
-- **The quantum models are not distinguishable from random here.** On this
-  synthetic benchmark at N = 200 and 6 qubits, every quantum model's 95%
-  bootstrap CI for ROC-AUC includes 0.5 (QSVM-Pauli 0.52 [0.44, 0.60], QSVM-ZZ
-  0.51 [0.43, 0.59], QSVM-custom 0.51 [0.44, 0.59], QNN 0.48 [0.40, 0.56],
-  VQC 0.44 [0.35, 0.52]). Before the VQC and QNN were seeded, an earlier
-  committed run gave VQC 0.54 and QNN 0.51, so their point estimates move by up
-  to 0.1 between seeds while staying inside chance-level CIs. The honest
-  statement is not "quantum is worse" but
-  "quantum is indistinguishable from chance on this data" — exactly what the CIs
-  are there to make testable.
+- **With the pipeline's encoding the quantum models are at chance; for the
+  QSVMs, the encoding is why.** Every quantum model's 95% bootstrap CI for ROC-AUC includes
+  0.5 (QSVM-Pauli 0.52 [0.44, 0.60], QSVM-ZZ 0.51 [0.43, 0.59], QSVM-custom
+  0.51 [0.44, 0.59], QNN 0.48 [0.40, 0.56], VQC 0.44 [0.35, 0.52]). For the QSVMs
+  the cause is the unscaled angle encoding: the kernels sit at the random-state
+  fidelity (off-diagonal mean 0.016 to 0.019 against 1/64), and rescaling the inputs,
+  with the scale picked on validation data, lifts test ROC-AUC to 0.70 to 0.80 on the
+  same rows (see [Kernel bandwidth ablation](#kernel-bandwidth-ablation)). So the
+  QSVM null is a property of the pipeline's encoding, which leaves the kernel at the
+  random-state value. It does not show that quantum kernels cannot learn this task,
+  and it is not a statement about N = 200.
+
+- **The VQC and QNN are under-trained.** Each has 18 trainable weights
+  (`RealAmplitudes(6, reps=2)`) and gets 60 COBYLA loss evaluations.
+  qiskit-machine-learning's cross-entropy uses log base 2, so predicting 0.5 for
+  every row costs 1.0 bit; the committed runs end at 0.955 bits (VQC) and 0.950 bits
+  (QNN), barely below that (`reports/figures/vqc_loss.png`, `qnn_loss.png`). Their
+  CIs cover test-set sampling only: an earlier, unseeded committed run gave VQC 0.540
+  and QNN 0.506, against 0.437 and 0.484 now. So their chance-level rows say little
+  about what these circuits could learn with a larger optimization budget or a
+  rescaled encoding; neither was tested here.
 
 - **The classical baselines have real, stable signal.** Logistic Regression
   reaches ROC-AUC 0.82 [0.79, 0.85] with a CI well above 0.5, and its 5-fold CV
   mean (0.81 ± 0.01) matches the single-split estimate — so the classical result
   is not a lucky split. SVM-RBF and Random Forest behave the same way.
 
-- **Feature-map choice is within noise at this scale.** The three QSVM feature
-  maps (ZZ, Pauli Z+XX, custom) land within ~0.01 ROC-AUC of one another and all
-  overlap 0.5. The fidelity kernel is close to the identity
-  (most off-diagonal entries near 0), so the SVM has little structure to exploit;
-  the near-orthogonal kernel heatmaps in notebook 03 show this directly.
+- **Feature-map choice cannot show up while the kernel is concentrated.** At the
+  pipeline's encoding the three QSVM feature maps (ZZ, Pauli Z+XX, custom) land
+  within ~0.01 ROC-AUC of one another and all overlap 0.5, because all three kernels
+  are close to the identity: the off-diagonal entries are near 0, as the heatmaps in
+  `reports/figures/kernel_heatmap_*.png` show. After bandwidth selection the point
+  estimates spread out (custom 0.798, Pauli 0.728, ZZ 0.701), but neighbouring CIs
+  overlap, so this does not establish a ranking.
 
-- **Runtime is the bottleneck.** Each QSVM training requires O(N²) circuit
-  evaluations; VQC/QNN are linear in N but every COBYLA iteration runs the
-  full forward pass on all training points. On the statevector simulator the
-  quantum models take ~37-174 s versus ~0.006-1.1 s for the classical baselines
-  (roughly 30× to 30,000× slower).
+- **Runtime here reflects the kernel implementation.** The pipeline's
+  `FidelityQuantumKernel` runs one ComputeUncompute circuit per kernel entry, so each
+  QSVM fit needs O(N²) circuit runs; VQC/QNN are linear in N but every COBYLA
+  evaluation runs the full forward pass on all training points. With this
+  implementation the quantum models take ~37-174 s versus ~0.006-1.1 s for the
+  classical baselines (roughly 30× to 30,000× slower). That gap belongs to the
+  implementation, not to simulating 6 qubits: an exact statevector kernel simulates
+  each point once, and the exact training and test kernels plus the SVC fit take
+  0.9 to 5.6 s per feature map (`reports/bandwidth_ablation.json`). Timed on the
+  same shared 4-core Linux machine, the pipeline's QSVC fit took 68 to 349 s per
+  feature map and the exact training kernel plus SVC fit took 0.3 to 1.8 s.
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
   identify data-encoding regimes where the quantum kernel is provably
@@ -396,6 +481,8 @@ python scripts/train_vqc_qnn.py --n 200 --k 6 --reps 2 --maxiter 60
 - Havlíček, V. et al. (2019). [*Supervised learning with quantum-enhanced feature spaces*](https://www.nature.com/articles/s41586-019-0980-2). Nature 567, 209–212.
 - Schuld, M. & Killoran, N. (2019). [*Quantum machine learning in feature Hilbert spaces*](https://arxiv.org/abs/1803.07128). PRL 122, 040504.
 - Liu, Y., Arunachalam, S. & Temme, K. (2021). [*A rigorous and robust quantum speed-up in supervised machine learning*](https://arxiv.org/abs/2010.02174). Nature Physics 17, 1013–1017.
+- Shaydulin, R. & Wild, S. M. *Importance of kernel bandwidth in quantum machine learning*. [arXiv:2111.05451](https://arxiv.org/abs/2111.05451) (published in Phys. Rev. A).
+- Thanasilp, S., Wang, S., Cerezo, M. & Holmes, Z. (2024). *Exponential concentration in quantum kernel methods*. Nature Communications 15. [doi:10.1038/s41467-024-49287-w](https://doi.org/10.1038/s41467-024-49287-w).
 - Qiskit Machine Learning [documentation](https://qiskit-community.github.io/qiskit-machine-learning/).
 - WiDS Datathon 2020 [ICU dataset](https://www.kaggle.com/competitions/widsdatathon2020/data).
 
