@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 
 from qml_healthcare.bandwidth import offdiag_mean, select_scale, svc_on_kernel, sweep_scales
+from qml_healthcare.config import REPORTS_DIR
+from qml_healthcare.evaluation import load_results
 from qml_healthcare.models.qsvm import train_qsvm
 from qml_healthcare.models.quantum_kernels import (
     build_feature_map,
@@ -49,3 +53,16 @@ def test_sweep_scales_reports_every_scale(small_quantum_data):
         assert 0.0 <= r["offdiag_mean"] <= 1.0 + 1e-9
     # Shrinking the inputs towards 0 maps every point to the same state, so K -> all ones.
     assert rows[0]["offdiag_mean"] > 0.999
+
+
+def test_committed_ablation_agrees_with_committed_results():
+    """reports/bandwidth_ablation.json must reproduce the committed QSVM rows at s = 1.0, and
+    each selected scale must follow the pre-specified rule on the recorded validation AUCs."""
+    ablation = json.loads((REPORTS_DIR / "bandwidth_ablation.json").read_text(encoding="utf-8"))
+    committed = load_results()["qsvm"]
+    for name, m in ablation["feature_maps"].items():
+        for key in ("roc_auc", "roc_auc_ci_low", "roc_auc_ci_high", "accuracy"):
+            assert np.isclose(m["test"]["s_1"][key], committed[f"qsvm_{name}"][key], atol=1e-9)
+        val = {r["scale"]: r["val_roc_auc"] for r in m["sweep"]}
+        assert m["selected_scale"] == select_scale(val)
+        assert m["test"]["selected"]["scale"] == m["selected_scale"]
