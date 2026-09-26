@@ -82,8 +82,7 @@ The [live demo](demo.md) is a **simplified model**, not the benchmark model:
 
 ## Where the result could change
 
-Liu, Arunachalam, and Temme (2021) prove there exist learning problems where quantum kernels offer a
-provable advantage and are hard to simulate classically. ICU mortality on tabular features is not
-known to be such a problem. The value of this repository is the audited, reproducible pipeline: the
-feature maps, fidelity kernel, PSD enforcement, and Qiskit primitives transfer directly to a setting
-where a quantum advantage is plausible.
+Liu, Arunachalam, and Temme (2021) construct a learning problem with a provable quantum-kernel
+speedup. ICU mortality on tabular features is not known to be such a problem, and nothing here tests
+that regime. The value of this repository is the audited, reproducible pipeline and its ablation, not
+a claim about quantum advantage.

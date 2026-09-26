@@ -65,20 +65,20 @@ statistically indistinguishable from a coin flip on this test set.
    simulates each point once, and the exact training and test kernels plus the SVC fit take 0.9 to 5.6
    seconds per feature map.
 
-5. **The engineering carries forward.** The chance-level result is a statement about the pipeline's
-   unscaled encoding on this synthetic benchmark, not about quantum machine learning in general. Liu,
-   Arunachalam, and Temme (2021) identify regimes where quantum kernels are provably hard to simulate
-   classically; the feature maps, fidelity kernel, PSD enforcement, and Qiskit primitives used here
-   transfer directly to that setting.
+5. **The result is about this encoding on this data.** The chance-level result is a statement about
+   the pipeline's unscaled encoding on this synthetic benchmark, not about quantum machine learning in
+   general. Liu, Arunachalam, and Temme (2021) construct a learning problem with a provable
+   quantum-kernel speedup. ICU mortality on tabular features is not known to be such a problem, and
+   nothing here tests that regime.
 
 ## Kernel bandwidth ablation
 
 The pipeline feeds `StandardScaler` z-scores (from -2.85 to 3.18 on the quantum training rows)
 straight into the rotation angles. At that scale the mean off-diagonal entry of the 200 x 200
-training kernel is 0.0160 to 0.0194, against 1/2^6 = 0.0156 for two random 6-qubit states: the
-exponential concentration described by Thanasilp et al. (Nature Communications 15, 2024,
-doi:10.1038/s41467-024-49287-w). The input scale is the kernel bandwidth studied by Shaydulin and Wild
-(arXiv:2111.05451).
+training kernel is 0.0160 to 0.0194, against 1/2^6 = 0.0156 for two random 6-qubit states. This is
+consistent with the concentration mechanism analysed by Thanasilp et al. (Nature Communications 15,
+2024, doi:10.1038/s41467-024-49287-w); the qubit-number scaling is not tested here. The input scale is
+the kernel bandwidth studied by Shaydulin and Wild (arXiv:2111.05451).
 
 `scripts/ablate_kernel_bandwidth.py` was added after an audit found this concentration, and its design
 was committed before it was run. It multiplies the inputs by s in {0.05, 0.1, 0.2, 0.5, 1}, picks s

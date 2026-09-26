@@ -54,7 +54,7 @@
 | **1. Data** | Downloads the WiDS 2020 ICU dataset (~91 k stays, 186 features) via Kaggle, or synthesises a schema-matched 5 000-row dataset when credentials are absent. |
 | **2. Preprocess** | Median imputation → one-hot encode → stratified 70/10/20 train/val/test split → train-only `StandardScaler` → `SelectKBest` (ANOVA-F) to pick the top *k* features for quantum encoding. |
 | **3. Classical baselines** | RBF SVM, Logistic Regression, Random Forest on the full preprocessed feature set. |
-| **4. QSVM** | `QSVC` + `FidelityQuantumKernel` with three feature maps on a class-balanced subsample (O(N²) kernel constraint). |
+| **4. QSVM** | `QSVC` + `FidelityQuantumKernel` with three feature maps on a class-balanced subsample (the pipeline's kernel runs O(N²) circuits). |
 | **5. Bonus quantum models** | Variational Quantum Classifier (`VQC`) and a `SamplerQNN`-based `NeuralNetworkClassifier`. |
 | **6. Evaluation** | Accuracy, balanced accuracy, ROC-AUC, PR-AUC, F1, and wall-clock training time per model. Outputs figures to `reports/figures/` and a JSON metrics dump. |
 
@@ -221,8 +221,8 @@ All three maps share the same interface: `build_feature_map(name, n_features, re
 
 The custom map applies a Hadamard to all qubits, encodes each feature as
 `RZ(2xᵢ)`, then entangles adjacent pairs with `CZ` gates. Unlike ZZFeatureMap,
-the entanglement step is a fixed Clifford (`CZ`), which makes the non-classical
-contribution come entirely from the data-dependent rotations.
+the entanglement step is a fixed Clifford (`CZ`), so the data enters only through
+the single-qubit rotations.
 
 ### Kernel construction
 
@@ -353,9 +353,10 @@ The pipeline feeds the `StandardScaler` z-scores of the six selected features
 (from -2.85 to 3.18 on the quantum training rows) straight into the rotation angles.
 At that scale the fidelity kernel carries almost no information about the inputs: the
 mean off-diagonal entry of the 200 x 200 training kernel is 0.0160 to 0.0194, against
-1/2^6 = 0.0156 for two random 6-qubit states. This is the exponential concentration
-described by Thanasilp et al. (2024), and the input scale is the kernel bandwidth
-studied by Shaydulin & Wild (arXiv:2111.05451).
+1/2^6 = 0.0156 for two random 6-qubit states. This is consistent with the
+concentration mechanism analysed by Thanasilp et al. (2024); the qubit-number scaling
+is not tested here. The input scale is the kernel bandwidth studied by Shaydulin &
+Wild (arXiv:2111.05451).
 
 `scripts/ablate_kernel_bandwidth.py` tests this. It was added after an audit found the
 concentration, and its design was committed before it was run: multiply the inputs by
@@ -465,12 +466,10 @@ RBF control is not in it.
   0.9 to 5.6 s per feature map (`reports/bandwidth_ablation.json`).
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
-  identify data-encoding regimes where the quantum kernel is provably
-  classically hard to approximate. For practical ICU mortality prediction
-  today, classical kernels are the right tool — but the engineering stack
-  here (feature-map design, fidelity estimation, PSD enforcement,
-  primitive-based execution) carries over directly when those regimes become
-  accessible on fault-tolerant hardware.
+  construct a learning problem with a provable quantum-kernel speedup. ICU
+  mortality on tabular features is not known to be such a problem, and nothing
+  here tests that regime. For ICU mortality prediction on this data, classical
+  models are the right tool.
 
 ---
 
