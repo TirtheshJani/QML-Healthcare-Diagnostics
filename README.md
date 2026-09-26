@@ -392,7 +392,7 @@ RBF control is not in it.
   0.80), and logistic regression reaches 0.794 on the same 200 rows and 6 features.
   So the chance-level QSVM rows in the main table come from the unscaled encoding, not
   from N = 200 or from using 6 features.
-- The best kernel (custom, s = 0.1) is level with logistic regression on these rows
+- The best QSVM (custom, s = 0.1) is level with logistic regression on these rows
   (0.798 against 0.794, with nearly the same CI); ZZ and Pauli stay below it. No
   model's point estimate beats the APACHE column alone (0.812), which is one of the
   six encoded features.
