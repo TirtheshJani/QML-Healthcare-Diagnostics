@@ -10,6 +10,7 @@ from qml_healthcare.models.quantum_kernels import (
     FEATURE_MAP_NAMES,
     build_feature_map,
     compute_kernel_matrix,
+    exact_fidelity_kernel,
     make_quantum_kernel,
 )
 
@@ -59,3 +60,20 @@ def test_kernel_matrix_cross_shape():
     K = compute_kernel_matrix(kernel, X_a, X_b)
     assert K.shape == (4, 3)
     assert (K >= -1e-6).all() and (K <= 1.0 + 1e-6).all()
+
+
+@pytest.mark.parametrize("name", FEATURE_MAP_NAMES)
+def test_exact_kernel_matches_fidelity_quantum_kernel(name):
+    """The statevector-overlap kernel must equal the pipeline's FidelityQuantumKernel
+    (ComputeUncompute + reference Sampler) at the pipeline's settings: 6 qubits, reps=2."""
+    rng = np.random.default_rng(3)
+    X_a = rng.normal(size=(5, 6))
+    X_b = rng.normal(size=(3, 6))
+    fm = build_feature_map(name, n_features=6, reps=2)
+    kernel = make_quantum_kernel(fm)
+    np.testing.assert_allclose(
+        exact_fidelity_kernel(fm, X_a), compute_kernel_matrix(kernel, X_a), atol=1e-8
+    )
+    np.testing.assert_allclose(
+        exact_fidelity_kernel(fm, X_a, X_b), compute_kernel_matrix(kernel, X_a, X_b), atol=1e-8
+    )

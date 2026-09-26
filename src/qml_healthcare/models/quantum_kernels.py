@@ -6,6 +6,7 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
 from qiskit.circuit.library import PauliFeatureMap, ZZFeatureMap
+from qiskit.quantum_info import Statevector
 from qiskit_machine_learning.kernels import FidelityQuantumKernel
 
 FEATURE_MAP_NAMES: tuple[str, ...] = ("zz", "pauli", "custom")
@@ -43,6 +44,32 @@ def _custom_feature_map(n_features: int, reps: int) -> QuantumCircuit:
 def make_quantum_kernel(feature_map: QuantumCircuit) -> FidelityQuantumKernel:
     """Wrap a feature map in a FidelityQuantumKernel (statevector-based)."""
     return FidelityQuantumKernel(feature_map=feature_map)
+
+
+def _statevectors(feature_map: QuantumCircuit, X: np.ndarray) -> np.ndarray:
+    """One exact statevector per row of ``X`` (rows = samples, columns = feature-map params)."""
+    params = list(feature_map.parameters)
+    return np.array(
+        [
+            Statevector(feature_map.assign_parameters(dict(zip(params, x, strict=True)))).data
+            for x in np.asarray(X, dtype=float)
+        ]
+    )
+
+
+def exact_fidelity_kernel(
+    feature_map: QuantumCircuit,
+    X_a: np.ndarray,
+    X_b: np.ndarray | None = None,
+) -> np.ndarray:
+    """Exact fidelity kernel K[i,j] = |⟨φ(aᵢ)|φ(bⱼ)⟩|² from statevector overlaps.
+
+    Same kernel as ``make_quantum_kernel(feature_map)``, but it simulates each row once
+    (O(N) simulations) instead of one ComputeUncompute circuit per kernel entry (O(N²)).
+    """
+    S_a = _statevectors(feature_map, X_a)
+    S_b = S_a if X_b is None else _statevectors(feature_map, X_b)
+    return np.abs(S_a.conj() @ S_b.T) ** 2
 
 
 def compute_kernel_matrix(
