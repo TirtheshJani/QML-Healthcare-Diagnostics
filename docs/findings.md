@@ -19,11 +19,11 @@ The table below is generated directly from `reports/results.json` by
 | Logistic Regression | classical | 0.810 | 0.651 | 0.817 [0.787, 0.845] | 0.578 | 0.460 | 0.01 |
 | Random Forest | classical | 0.808 | 0.646 | 0.792 [0.758, 0.824] | 0.540 | 0.451 | 0.54 |
 | SVM (RBF) | classical | 0.812 | 0.631 | 0.759 [0.721, 0.796] | 0.532 | 0.420 | 1.10 |
-| VQC | quantum | 0.520 | 0.520 | 0.540 [0.457, 0.616] | 0.567 | 0.556 | 77.50 |
 | QSVM (Pauli Z+XX) | quantum | 0.520 | 0.520 | 0.522 [0.440, 0.600] | 0.518 | 0.543 | 174.46 |
 | QSVM (ZZFeatureMap) | quantum | 0.535 | 0.535 | 0.513 [0.434, 0.590] | 0.518 | 0.551 | 104.08 |
 | QSVM (custom feature map) | quantum | 0.490 | 0.490 | 0.513 [0.437, 0.591] | 0.513 | 0.474 | 36.96 |
-| QNN (SamplerQNN) | quantum | 0.500 | 0.500 | 0.506 [0.425, 0.583] | 0.506 | 0.510 | 74.03 |
+| QNN (SamplerQNN) | quantum | 0.505 | 0.505 | 0.484 [0.399, 0.559] | 0.477 | 0.526 | 129.85 |
+| VQC | quantum | 0.450 | 0.450 | 0.437 [0.353, 0.518] | 0.459 | 0.476 | 132.97 |
 <!-- END_RESULTS_TABLE -->
 
 ROC-AUC is shown with its 95% bootstrap confidence interval. A model whose interval includes 0.5 is
@@ -34,8 +34,10 @@ statistically indistinguishable from a coin flip on this test set.
 ## Five honest takeaways
 
 1. **The quantum models are at chance.** Every quantum model's ROC-AUC confidence interval includes
-   0.5. The strongest is the VQC at 0.540 [0.457, 0.616]; the QSVM variants land at 0.513 to 0.522
-   and the QNN at 0.506 [0.425, 0.583]. None clears the bar for a learned signal.
+   0.5. The QSVM variants land at 0.513 to 0.522, the QNN at 0.484 [0.399, 0.559], and the VQC at
+   0.437 [0.353, 0.518]. None clears the bar for a learned signal. Before the VQC and QNN were
+   seeded, an earlier committed run gave them 0.540 and 0.506, so their point estimates move by up to
+   0.1 between seeds while their intervals keep covering 0.5.
 
 2. **The classical baselines have stable, real signal.** Logistic Regression reaches ROC-AUC 0.817
    [0.787, 0.845], and 5-fold cross-validation agrees closely (0.810 plus or minus 0.013), so the
