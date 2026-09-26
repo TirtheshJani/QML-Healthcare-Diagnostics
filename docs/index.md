@@ -8,8 +8,10 @@ hide:
 
 # Quantum ML for ICU Mortality Prediction
 
-A reproducible benchmark of **Quantum SVMs, a VQC, and a QNN** against classical baselines on the
-WiDS Datathon 2020 ICU dataset. Built on Qiskit, fully seeded, and honest about what it found.
+A reproducible benchmark of **Quantum SVMs, a VQC, and a QNN** against classical baselines for ICU
+mortality prediction. The pipeline is built for the WiDS Datathon 2020 ICU dataset, but every result on
+this site comes from its schema-matched **synthetic fallback**, not the real WiDS data. Built on
+Qiskit, fully seeded, and honest about what it found.
 
 [View the findings](findings.md){ .md-button .md-button--primary }
 [Try the live demo](demo.md){ .md-button }
@@ -18,10 +20,10 @@ WiDS Datathon 2020 ICU dataset. Built on Qiskit, fully seeded, and honest about 
 </section>
 
 <div class="callout-headline" markdown>
-**Headline:** at this scale, the classical models win cleanly and the quantum models sit at chance.
-Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845]; every quantum model's 95% confidence
-interval includes 0.5, while running two to four orders of magnitude slower. That negative result is
-the point: it is what a careful, leakage-free audit actually shows.
+**Headline:** on the synthetic data at this scale, the classical models win cleanly and the quantum
+models sit at chance. Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845]; every quantum
+model's 95% confidence interval includes 0.5, while training roughly 30 to 30,000 times slower. That
+negative result is the point: it is what a careful audit actually shows.
 </div>
 
 ## At a glance

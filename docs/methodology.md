@@ -12,9 +12,10 @@ the pipeline end to end offline.
 
 The synthetic generator (`qml_healthcare.data.download.generate_synthetic_icu`) draws correlated,
 realistically distributed vitals, labs, and Glasgow Coma Scale components, then assigns mortality
-through a logistic link on a severity score, reproducing the roughly 8% positive rate and about 3%
-missingness of the real data. The numbers shown across this site were produced on that synthetic
-fallback; see [Limitations](limitations.md).
+through a logistic link on a severity score, with about 3% missingness per numeric column. It does not
+reproduce the real class balance: its positive rate is 22% (1,111 of 5,000 rows), not about 8%. The
+numbers shown across this site were produced on that synthetic fallback; see
+[Limitations](limitations.md).
 
 A curated, interpretable subset of features is used (`config.NUMERIC_FEATURES`,
 `config.CATEGORICAL_FEATURES`), including age, BMI, key APACHE vitals and labs, the three GCS
@@ -27,10 +28,12 @@ The chain lives in `qml_healthcare.data.preprocess` and runs
 `select_features -> clean -> make_splits -> scale -> top_k_features -> subsample_for_quantum`:
 
 - **`clean`** drops rows with a missing target, imputes numeric columns with the median and
-  categoricals with the mode, then one-hot encodes string categories (`drop_first=True`).
+  categoricals with the mode, then one-hot encodes string categories (`drop_first=True`). It runs
+  before the split, so the imputation medians and modes are computed on all rows, including the
+  validation and test rows.
 - **`make_splits`** produces a stratified 70 / 10 / 20 train / validation / test split.
-- **`scale`** fits a `StandardScaler` on the training split only and applies it to all three, so there
-  is no leakage from validation or test into the fitted statistics.
+- **`scale`** fits a `StandardScaler` on the training split only and applies it to all three, so the
+  scaler statistics carry no information from the validation or test rows.
 - **`top_k_features`** uses `SelectKBest` with the ANOVA F-statistic to choose the `k = 6` strongest
   features for the quantum encoding (six qubits).
 - **`subsample_for_quantum`** draws a class-balanced subsample of `N = 200` training points, because
@@ -50,8 +53,10 @@ and balanced accuracy.
 
 ## Quantum models
 
-All quantum models run on Qiskit's exact `StatevectorSampler` (no shot noise, no hardware), at
-6 qubits with `reps = 2`.
+All quantum models use exact, shot-free simulation (no hardware) at 6 qubits. The VQC and QNN use
+Qiskit's `StatevectorSampler`; the QSVM kernels use the default `ComputeUncompute` fidelity with
+Qiskit's reference `Sampler`. Feature maps and ansatzes use `reps = 2`, except the QNN feature map,
+which uses `reps = 1`.
 
 ### Quantum SVM with three feature maps
 
@@ -59,7 +64,8 @@ All quantum models run on Qiskit's exact `StatevectorSampler` (no shot noise, no
 
 - **ZZFeatureMap** (`paulis = ["Z", "ZZ"]`)
 - **Pauli Z+XX** (`paulis = ["Z", "XX"]`), genuinely different from the ZZ map
-- a **custom** map: Hadamard, then `RZ(2x)` per qubit, then a ring of `CZ` gates
+- a **custom** map: Hadamard, then `RZ(2x)` per qubit, then a linear chain of `CZ` gates on
+  neighbouring qubits
 
 Each map is wrapped in a `FidelityQuantumKernel` (with `enforce_psd=True`), which computes
 `K(x, x') = |<phi(x) | phi(x')>| squared`. A standard `QSVC` is then trained on that kernel.

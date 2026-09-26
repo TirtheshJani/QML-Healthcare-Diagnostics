@@ -16,8 +16,9 @@ result about a specific setting, not a general claim.
 
 The numbers on this site were produced on the **synthetic fallback**, not the real WiDS data, because
 the public site is built without Kaggle credentials. The synthetic generator is schema-matched and
-realistic, but it is a model of the data, not the data. Running on the real dataset can shift the
-absolute numbers, though the classical-versus-quantum gap is expected to persist.
+realistic, but it is a model of the data, not the data. Its positive rate (22%) is also well above the
+real data's (about 8%). Running on the real dataset can shift the absolute numbers, and whether the
+classical-versus-quantum gap persists there has not been tested.
 
 ## Scale and simulation
 
@@ -26,6 +27,12 @@ absolute numbers, though the classical-versus-quantum gap is expected to persist
   simulator.
 - All quantum models run on an **exact statevector simulator** with no shot noise and no hardware
   effects. Real devices would add noise, not remove the scaling problem.
+- The two model families are **not trained or scored on the same rows**. The classical models use the
+  full 3,500-row training split with all 29 input columns and are scored on the full 1,000-row test
+  split (22.2% positive). The quantum models use a class-balanced 200-row training subsample with the
+  top 6 features and are scored on a class-balanced 200-row subsample of the same test split. Accuracy
+  and PR-AUC therefore have different chance levels in the two groups (about 0.78 and 0.22 for the
+  classical rows, 0.5 for the quantum rows), so compare ROC-AUC and balanced accuracy across families.
 - The quantum models are evaluated with **bootstrap confidence intervals only**, not cross-validation,
   because refitting an O(N squared) kernel per fold is prohibitive. The classical models do get 5-fold
   cross-validation, so the two families are not measured identically. The bootstrap intervals are wide

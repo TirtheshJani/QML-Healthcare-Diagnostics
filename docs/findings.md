@@ -1,9 +1,12 @@
 # Findings
 
 The benchmark trains three classical baselines and five quantum models on the same ICU mortality
-task, evaluates them on a held-out test set, and attaches a 95% bootstrap confidence interval to
-every metric. The result is a clean separation: the classical models carry real signal, and the
-quantum models, at this scale, do not.
+task, using the schema-matched synthetic fallback rather than the real WiDS data, evaluates them on
+held-out test rows, and attaches a 95% bootstrap confidence interval to every metric. The classical
+models are scored on the full 1,000-row test split and the quantum models on a class-balanced 200-row
+subsample of it, so compare ROC-AUC and balanced accuracy across the two groups, not accuracy or
+PR-AUC (see [Limitations](limitations.md)). The result is a clean separation: the classical models
+carry real signal, and the quantum models, at this scale, do not.
 
 ## Results
 
@@ -43,7 +46,7 @@ statistically indistinguishable from a coin flip on this test set.
    kernel matrices are close to the identity at N=200, so there is little structure for the SVM to use.
 
 4. **Runtime is the real bottleneck.** Classical models train in 0.006 to 1.1 seconds. The quantum
-   models take 37 to 174 seconds on a statevector simulator, two to four orders of magnitude slower,
+   models take 37 to 174 seconds on a statevector simulator, roughly 30 to 30,000 times slower,
    driven by the O(N squared) cost of the fidelity kernel.
 
 5. **The engineering carries forward.** The result is a statement about this scale and this simulator,
