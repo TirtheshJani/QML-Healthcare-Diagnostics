@@ -7,6 +7,9 @@ Every number, figure, and table in this project is regenerated from a fixed seed
 - Python 3.10 to 3.12. On Windows, use the launcher: `py -3.11`.
 - Verified stack: Qiskit 1.4.5, qiskit-machine-learning 0.8.4, scikit-learn 1.8, pandas 3.0,
   numpy 2.4.
+- Also rerun on Linux with Qiskit 1.4.6, qiskit-machine-learning 0.8.4, scikit-learn 1.9.1,
+  pandas 3.0.6, numpy 2.4.6: the classical and QSVM metrics matched exactly on Python 3.11, and the
+  seeded VQC and QNN gave identical metrics on Python 3.11 and 3.12.
 
 Install the package with its development tools:
 

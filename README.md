@@ -1,7 +1,7 @@
 # QML Healthcare Diagnostics
 
 [![CI](https://github.com/TirtheshJani/QML-Healthcare-Diagnostics/actions/workflows/ci.yml/badge.svg)](https://github.com/TirtheshJani/QML-Healthcare-Diagnostics/actions/workflows/ci.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10 | 3.11 | 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
 [![Qiskit 1.x](https://img.shields.io/badge/Qiskit-1.x-6929C4.svg)](https://qiskit.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -11,9 +11,14 @@
 > **Quantum Machine Learning for ICU mortality prediction.**  
 > A reproducible, end-to-end benchmark of Quantum SVMs (three feature maps),
 > a Variational Quantum Classifier, and a Quantum Neural Network against
-> classical baselines, all on the WiDS Datathon 2020 ICU dataset.
+> classical baselines, built for the WiDS Datathon 2020 ICU dataset.
 > Runs offline from a single command using a schema-matched synthetic fallback
 > when Kaggle credentials are not available.
+>
+> **All results reported here come from that synthetic fallback, not the real
+> WiDS data.** On it, Logistic Regression is the strongest model (ROC-AUC 0.817,
+> 95% bootstrap CI [0.787, 0.845]) and every quantum model's ROC-AUC CI
+> includes 0.5, so the quantum models are at chance.
 
 **Live site and interactive demo:** <https://tirtheshjani.github.io/QML-Healthcare-Diagnostics/>
 (documentation, interactive charts, and a client-side classical prediction demo, built with
@@ -125,7 +130,7 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── train_qsvm.py          # QSVM only (--feature-maps zz pauli custom)
 │   ├── train_vqc_qnn.py       # VQC + QNN only
 │   └── update_readme_table.py # Refresh the results table in this README
-├── tests/                     # pytest — 28 deterministic tests, fast
+├── tests/                     # pytest — 38 deterministic tests, fast
 ├── reports/
 │   ├── figures/               # All generated PNGs (committed)
 │   └── results.json           # Latest metrics dump
@@ -151,20 +156,21 @@ DEFAULT_REPS             = 2    # feature-map / ansatz reps
 DEFAULT_QUANTUM_SUBSAMPLE = 200  # N — training points for QSVM/VQC/QNN
 ```
 
-The 17 curated features (16 numeric + 1 binary surgical flag) cover
-vitals, lab values, pre-ICU length of stay, GCS components, and
-the APACHE IV hospital-death probability estimate.
+The 21 curated features (17 numeric, plus gender, ethnicity, ICU type, and
+the elective-surgery flag) cover age and BMI, vitals, lab values, pre-ICU
+length of stay, GCS components, and the APACHE IV hospital-death probability
+estimate. One-hot encoding turns them into 29 model inputs.
 
 ---
 
 ## Notebooks
 
 Each notebook is self-contained but shares the installed `qml_healthcare`
-package, so any cell can be re-run independently after `pip install -e .`.
+package, so any cell can be re-run independently after `pip install -e ".[dev]"`.
 
 | Notebook | Content |
 |----------|---------|
-| `01_data_exploration` | Shape, class balance (~8 % mortality), missingness patterns, feature distributions stratified by outcome, correlation heatmap |
+| `01_data_exploration` | Shape, class balance (22 % mortality on the synthetic fallback), missingness patterns, feature distributions stratified by outcome, correlation heatmap |
 | `02_classical_baseline` | Trains and evaluates SVM-RBF, Logistic Regression, Random Forest; produces ROC/PR curves and confusion matrices |
 | `03_quantum_kernels` | Draws the three feature-map circuits; computes and visualises 60×60 kernel matrices; analyses eigenvalue spectra |
 | `04_qsvm_training` | Trains one QSVC per feature map; overlaid ROC curves; per-map confusion matrices |
@@ -183,7 +189,7 @@ All three maps share the same interface: `build_feature_map(name, n_features, re
 |------|---------|-----------|
 | `zz` | `ZZFeatureMap` — H layer → RZ(2φ(x)) → ZZ entanglers | Havlíček et al., 2019 |
 | `pauli` | `PauliFeatureMap` with `paulis=["Z", "XX"]` — X-basis entanglement | Qiskit reference |
-| `custom` | H → RZ(2x) per qubit → CZ entanglement (ring) — explicit non-Clifford map | This repo |
+| `custom` | H → RZ(2x) per qubit → CZ entanglement (linear chain) — explicit non-Clifford map | This repo |
 
 > **Why `["Z", "XX"]` and not `["Z", "ZZ"]`?** `ZZFeatureMap` is *exactly*
 > `PauliFeatureMap(paulis=["Z", "ZZ"])`, so the two would produce identical
@@ -225,7 +231,7 @@ K(x, x') = |⟨φ(x)|φ(x')⟩|². The kernel matrix is guaranteed PSD by
 | Model | Architecture | Optimizer |
 |-------|-------------|-----------|
 | **VQC** | `ZZFeatureMap` (input) + `RealAmplitudes` ansatz + cross-entropy loss | COBYLA via `scipy.optimize.minimize` |
-| **QNN** | `PauliFeatureMap` + `RealAmplitudes` via `SamplerQNN` + `NeuralNetworkClassifier` | COBYLA |
+| **QNN** | `PauliFeatureMap` (Z+XX, `reps=1`) + `RealAmplitudes` via `SamplerQNN` + `NeuralNetworkClassifier` | COBYLA |
 
 Both use the `StatevectorSampler` primitive from `qiskit.primitives`, which
 samples 1,024 shots per circuit from the exact statevector; the shot sampling
@@ -262,7 +268,13 @@ Point metrics from a single split can be misleading on a subsampled test set
 > `python scripts/reproduce_all.py` on the **synthetic-fallback dataset**
 > (no Kaggle credentials). Real WiDS data was not run in this reproduction.
 > Brackets are 95% bootstrap CIs; the classical rows additionally have 5-fold
-> CV (see [Uncertainty estimates](#uncertainty-estimates)). Train times are
+> CV (see [Uncertainty estimates](#uncertainty-estimates)). The classical rows are
+> trained on the full 3,500-row training split (all 29 inputs) and scored on the
+> full 1,000-row test split (22.2% positive); the quantum rows are trained on a
+> class-balanced 200-row subsample (top 6 features) and scored on a class-balanced
+> 200-row subsample of the same test split. Accuracy and PR-AUC therefore have
+> different chance levels in the two groups (about 0.78 and 0.22 versus 0.5), so
+> compare ROC-AUC and balanced accuracy across them. Train times are
 > wall-clock and machine-dependent: the VQC and QNN rows were regenerated on a
 > slower Linux machine after their seeding was fixed, while the other rows come
 > from the original run. See
@@ -318,7 +330,7 @@ kernel heatmaps.
 
 - **Feature-map choice is within noise at this scale.** The three QSVM feature
   maps (ZZ, Pauli Z+XX, custom) land within ~0.01 ROC-AUC of one another and all
-  overlap 0.5. With only N = 200 the fidelity kernel is close to the identity
+  overlap 0.5. The fidelity kernel is close to the identity
   (most off-diagonal entries near 0), so the SVM has little structure to exploit;
   the near-orthogonal kernel heatmaps in notebook 03 show this directly.
 
@@ -326,7 +338,7 @@ kernel heatmaps.
   evaluations; VQC/QNN are linear in N but every COBYLA iteration runs the
   full forward pass on all training points. On the statevector simulator the
   quantum models take ~37-174 s versus ~0.006-1.1 s for the classical baselines
-  (roughly 10²-10⁴× slower).
+  (roughly 30× to 30,000× slower).
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
   identify data-encoding regimes where the quantum kernel is provably
@@ -341,20 +353,23 @@ kernel heatmaps.
 ## Development
 
 ```bash
-make test         # pytest — 28 deterministic tests, fast
+make test         # pytest — 38 deterministic tests, fast
 make lint         # ruff + black --check
 make format       # auto-fix formatting and lint
 make notebooks    # execute all notebooks via nbconvert
 pre-commit install
 ```
 
-CI runs `ruff`, `black --check`, and `pytest` across Python 3.10 / 3.11 / 3.12
-on every push and pull request.
+CI runs `ruff`, `black --check`, `pytest`, and `nbqa ruff` (notebooks) across
+Python 3.10 / 3.11 / 3.12 on pushes and pull requests to `main`.
 
-> **Verified stack.** Most recently reproduced on Windows with Python 3.11 and
+> **Verified stack.** Reproduced on Windows with Python 3.11 and
 > Qiskit 1.4.5, qiskit-machine-learning 0.8.4, scikit-learn 1.8, pandas 3.0,
-> numpy 2.4. On Windows use `python scripts/reproduce_all.py` (the `make`
-> targets assume a Unix shell).
+> numpy 2.4. Rerun on Linux with Qiskit 1.4.6, qiskit-machine-learning 0.8.4,
+> scikit-learn 1.9.1, pandas 3.0.6, numpy 2.4.6: the classical and QSVM metrics
+> matched the committed ones exactly on Python 3.11, and the seeded VQC and QNN
+> gave identical metrics on Python 3.11 and 3.12. On Windows use
+> `python scripts/reproduce_all.py` (the `make` targets assume a Unix shell).
 
 ### Individual CLI scripts
 
