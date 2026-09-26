@@ -130,7 +130,7 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── train_qsvm.py          # QSVM only (--feature-maps zz pauli custom)
 │   ├── train_vqc_qnn.py       # VQC + QNN only
 │   └── update_readme_table.py # Refresh the results table in this README
-├── tests/                     # pytest — 38 deterministic tests, fast
+├── tests/                     # pytest — 39 deterministic tests, fast
 ├── reports/
 │   ├── figures/               # All generated PNGs (committed)
 │   └── results.json           # Latest metrics dump
@@ -353,7 +353,7 @@ kernel heatmaps.
 ## Development
 
 ```bash
-make test         # pytest — 38 deterministic tests, fast
+make test         # pytest — 39 deterministic tests, fast
 make lint         # ruff + black --check
 make format       # auto-fix formatting and lint
 make notebooks    # execute all notebooks via nbconvert
