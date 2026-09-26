@@ -100,9 +100,17 @@ kernels from statevector overlaps (`quantum_kernels.exact_fidelity_kernel`, test
 `FidelityQuantumKernel` to 1e-8), multiplies the quantum inputs by a scale s in
 {0.05, 0.1, 0.2, 0.5, 1}, and fits the same `SVC` the QSVC fits. For each feature map it picks the s
 with the highest ROC-AUC on the validation split restricted to the same six features (ties go to the
-larger s), then scores the test rows only at s = 1 and at the chosen s. As matched controls it refits
-the classical baselines on the same 200-row, 6-feature split and scores the APACHE probability column
-alone. Results are in `reports/bandwidth_ablation.json` and on the [Findings](findings.md) page.
+larger s), then scores the test rows only at s = 1 and at the chosen s. As controls it refits the
+classical baselines on the same 200-row, 6-feature split with their default hyperparameters (not
+tuned) and scores the APACHE probability column alone. Results are in
+`reports/bandwidth_ablation.json` and on the [Findings](findings.md) page.
+
+A post-hoc control, `scripts/posthoc_tuned_rbf_control.py`, was added after those results were
+committed. It fits `SVC(kernel="rbf", C=1.0)` on the same split with gamma set to scikit-learn's
+default `gamma="scale"` value times s squared over the same grid (the RBF kernel on s times the
+inputs), picks s by the same rule on the same validation rows, and scores the test rows once with the
+same bootstrap. It is stored under its own key, `posthoc_tuned_rbf`, in
+`reports/bandwidth_ablation.json`.
 
 ## Metrics and uncertainty
 

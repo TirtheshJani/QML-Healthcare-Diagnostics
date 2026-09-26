@@ -24,7 +24,7 @@ reports/bandwidth_ablation.json.
   entries of its training kernel at the ablation's selected s and those of the selected RBF
   training kernel.
 
-Usage:
+Usage (after scripts/ablate_kernel_bandwidth.py, which rewrites the JSON without this key):
     python scripts/posthoc_tuned_rbf_control.py
 """
 

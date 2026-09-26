@@ -44,7 +44,12 @@ changing it, and writes `reports/bandwidth_ablation.json` and its figure:
 
 ```bash
 py -3.11 scripts/ablate_kernel_bandwidth.py
+py -3.11 scripts/posthoc_tuned_rbf_control.py
 ```
+
+The second command is the post-hoc tuned RBF control. It adds the key `posthoc_tuned_rbf` to
+`reports/bandwidth_ablation.json`; the ablation script rewrites that file without it, so run the
+control after the ablation.
 
 ## Determinism and the data caveat
 

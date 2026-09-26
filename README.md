@@ -21,7 +21,9 @@
 > includes 0.5, so the quantum models are at chance. A pre-specified
 > [kernel bandwidth ablation](#kernel-bandwidth-ablation) traces the QSVM null to
 > the unscaled angle encoding: with the input scale picked on validation data,
-> QSVM test ROC-AUC rises to 0.70 to 0.80.
+> QSVM test ROC-AUC rises to 0.70 to 0.80, and an RBF SVM with its bandwidth tuned
+> the same way (a post-hoc control) reaches 0.810 on the same rows. The rescaling
+> removes an encoding artifact; it does not show a quantum benefit.
 
 **Live site and interactive demo:** <https://tirtheshjani.github.io/QML-Healthcare-Diagnostics/>
 (documentation, interactive charts, and a client-side classical prediction demo, built with
@@ -140,6 +142,7 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── train_qsvm.py          # QSVM only (--feature-maps zz pauli custom)
 │   ├── train_vqc_qnn.py       # VQC + QNN only
 │   ├── ablate_kernel_bandwidth.py # Pre-specified kernel bandwidth ablation (QSVM)
+│   ├── posthoc_tuned_rbf_control.py # Post-hoc tuned RBF control for the ablation
 │   ├── update_readme_table.py # Refresh the results table in this README
 │   ├── build_docs_tables.py   # Results table + chart data for the docs site
 │   ├── export_demo_model.py   # Compact logistic regression for the live demo
@@ -371,12 +374,16 @@ kernels, which reproduce the committed QSVM rows at s = 1 exactly. The pipeline 
 | QSVM Pauli Z+XX, s chosen on validation | 0.05 | 0.3600 | 0.728 [0.660, 0.801] |
 | QSVM custom, pipeline encoding | 1 | 0.0194 | 0.513 [0.437, 0.591] |
 | QSVM custom, s chosen on validation | 0.1 | 0.7755 | 0.798 [0.737, 0.854] |
-| Logistic regression | | | 0.794 [0.731, 0.851] |
-| Random forest | | | 0.743 [0.673, 0.808] |
-| SVM (RBF) | | | 0.708 [0.635, 0.781] |
+| Logistic regression, default hyperparameters, not tuned | | | 0.794 [0.731, 0.851] |
+| Random forest, default hyperparameters, not tuned | | | 0.743 [0.673, 0.808] |
+| SVM (RBF), default hyperparameters, not tuned | | | 0.708 [0.635, 0.781] |
+| SVM (RBF), s chosen on validation (post-hoc control) | 0.2 | | 0.810 [0.747, 0.865] |
 | APACHE probability column alone (no model) | | | 0.812 [0.750, 0.869] |
 
 ![Kernel bandwidth ablation](reports/figures/bandwidth_ablation.png)
+
+The figure shows the classical controls at default hyperparameters; the post-hoc tuned
+RBF control is not in it.
 
 - With the scale chosen on validation data every QSVM is clear of chance (0.70 to
   0.80), and logistic regression reaches 0.794 on the same 200 rows and 6 features.
@@ -386,10 +393,23 @@ kernels, which reproduce the committed QSVM rows at s = 1 exactly. The pipeline 
   (0.798 against 0.794, with nearly the same CI); ZZ and Pauli stay below it. No
   model's point estimate beats the APACHE column alone (0.812), which is one of the
   six encoded features.
+- The classical controls from the ablation script use the pipeline's default
+  hyperparameters, while each QSVM had its input scale chosen on validation. A post-hoc
+  control, added after these results were committed
+  (`scripts/posthoc_tuned_rbf_control.py`), tunes an RBF SVM the same way: gamma set to
+  the default value times s² over the same grid, C = 1, s chosen by the same rule on
+  the same validation rows, test rows scored once with the same bootstrap. It picks
+  s = 0.2. At the selected scales the fidelity kernels behave like smooth classical
+  kernels (the off-diagonal entries of the custom and Pauli training kernels correlate
+  0.93 and 0.85 with those of the tuned RBF kernel; ZZ, at 0.52, less so), and a
+  bandwidth-tuned RBF SVM reaches 0.810 [0.747, 0.865] on the same rows, a higher point
+  estimate than every QSVM, though the intervals overlap. So the ablation shows the
+  null was an encoding artifact, not a quantum benefit.
 - For ZZ and Pauli the chosen s = 0.05 is the smallest value on the grid, so a smaller
   s might score higher; the grid was not extended after seeing the results. The VQC
   and QNN use the same unscaled encoding and were not rerun here.
-- Numbers and wall times are in `reports/bandwidth_ablation.json`.
+- Numbers and wall times are in `reports/bandwidth_ablation.json`; the post-hoc control
+  is stored separately there under `posthoc_tuned_rbf`.
 
 ---
 
@@ -402,7 +422,8 @@ kernels, which reproduce the committed QSVM rows at s = 1 exactly. The pipeline 
   the cause is the unscaled angle encoding: the kernels sit at the random-state
   fidelity (off-diagonal mean 0.016 to 0.019 against 1/64), and rescaling the inputs,
   with the scale picked on validation data, lifts test ROC-AUC to 0.70 to 0.80 on the
-  same rows (see [Kernel bandwidth ablation](#kernel-bandwidth-ablation)). So the
+  same rows, where an RBF SVM tuned the same way (a post-hoc control) reaches 0.810
+  (see [Kernel bandwidth ablation](#kernel-bandwidth-ablation)). So the
   QSVM null is a property of the pipeline's encoding, which leaves the kernel at the
   random-state value. It does not show that quantum kernels cannot learn this task,
   and it is not a statement about N = 200.

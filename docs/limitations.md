@@ -57,7 +57,9 @@ to logistic regression's 0.817 [0.787, 0.845].
   and PR-AUC therefore have different chance levels in the two groups (about 0.78 and 0.22 for the
   classical rows, 0.5 for the quantum rows), so compare ROC-AUC and balanced accuracy across families.
   For a like-for-like check, the bandwidth ablation refits the classical baselines on the quantum
-  split: logistic regression scores 0.794 [0.731, 0.851] there.
+  split with default hyperparameters: logistic regression scores 0.794 [0.731, 0.851] there. A
+  post-hoc RBF SVM with its bandwidth tuned on validation, the way each QSVM's input scale was,
+  scores 0.810 [0.747, 0.865].
 - The quantum models are evaluated with **bootstrap confidence intervals only**, not cross-validation;
   with the pipeline's ComputeUncompute kernel each refit takes minutes. The classical models do get
   5-fold cross-validation, so the two families are not measured identically. The bootstrap intervals

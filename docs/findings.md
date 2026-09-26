@@ -93,19 +93,36 @@ statevector kernels reproduce the committed QSVM rows at s = 1 exactly. All rows
 | QSVM Pauli Z+XX, s chosen on validation | 0.05 | 0.3600 | 0.728 [0.660, 0.801] |
 | QSVM custom, pipeline encoding | 1 | 0.0194 | 0.513 [0.437, 0.591] |
 | QSVM custom, s chosen on validation | 0.1 | 0.7755 | 0.798 [0.737, 0.854] |
-| Logistic regression | | | 0.794 [0.731, 0.851] |
-| Random forest | | | 0.743 [0.673, 0.808] |
-| SVM (RBF) | | | 0.708 [0.635, 0.781] |
+| Logistic regression, default hyperparameters, not tuned | | | 0.794 [0.731, 0.851] |
+| Random forest, default hyperparameters, not tuned | | | 0.743 [0.673, 0.808] |
+| SVM (RBF), default hyperparameters, not tuned | | | 0.708 [0.635, 0.781] |
+| SVM (RBF), s chosen on validation (post-hoc control) | 0.2 | | 0.810 [0.747, 0.865] |
 | APACHE probability column alone (no model) | | | 0.812 [0.750, 0.869] |
 
-![Kernel concentration, validation ROC-AUC by input scale, and test ROC-AUC with matched classical controls](assets/figures/bandwidth_ablation.png){ loading=lazy }
+![Kernel concentration, validation ROC-AUC by input scale, and test ROC-AUC with classical controls at default hyperparameters](assets/figures/bandwidth_ablation.png){ loading=lazy }
+
+The figure shows the classical controls at default hyperparameters; the post-hoc tuned RBF control
+is not in it.
 
 With the scale chosen on validation data every QSVM is clear of chance, and the best one (custom,
 s = 0.1) is level with logistic regression on the same rows. No model's point estimate beats the
-APACHE column alone, which is one of the six encoded features. For ZZ and Pauli the chosen s = 0.05 is
-the smallest value on the grid, so a smaller s might score higher; the grid was not extended after
-seeing the results. The VQC and QNN use the same encoding and were not rerun. The numbers are in
-`reports/bandwidth_ablation.json`.
+APACHE column alone, which is one of the six encoded features.
+
+The classical controls from the ablation script use the pipeline's default hyperparameters, while
+each QSVM had its input scale chosen on validation. A post-hoc control, added after these results
+were committed (`scripts/posthoc_tuned_rbf_control.py`), tunes an RBF SVM the same way: gamma set to
+the default value times s squared over the same grid, C = 1, s chosen by the same rule on the same
+validation rows, test rows scored once with the same bootstrap. It picks s = 0.2. At the selected
+scales the fidelity kernels behave like smooth classical kernels (the off-diagonal entries of the
+custom and Pauli training kernels correlate 0.93 and 0.85 with those of the tuned RBF kernel; ZZ, at
+0.52, less so), and a bandwidth-tuned RBF SVM reaches 0.810 [0.747, 0.865] on the same rows, a higher
+point estimate than every QSVM, though the intervals overlap. So the ablation shows the null was an
+encoding artifact, not a quantum benefit.
+
+For ZZ and Pauli the chosen s = 0.05 is the smallest value on the grid, so a smaller s might score
+higher; the grid was not extended after seeing the results. The VQC and QNN use the same encoding and
+were not rerun. The numbers are in `reports/bandwidth_ablation.json`, with the post-hoc control
+stored separately under `posthoc_tuned_rbf`.
 
 ## Confusion matrices and training curves
 
