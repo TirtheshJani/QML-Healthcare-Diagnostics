@@ -95,7 +95,10 @@ evaluations, which leaves them under-trained (see [Limitations](limitations.md))
 ### Kernel bandwidth ablation
 
 `scripts/ablate_kernel_bandwidth.py` was added after an audit found the QSVM kernels at the
-random-state fidelity. Its design was fixed and committed before it was run. It computes exact fidelity
+random-state fidelity. Its design was fixed and committed before it was run. The audit that found the
+concentration had already scored the test rows at s in {1, 0.5, 0.25, 0.1} (custom 0.798 at s = 0.1)
+before this grid and selection rule were committed, so this is a confirmatory rerun with a selection
+rule fixed before the committed run, not a blind test. It computes exact fidelity
 kernels from statevector overlaps (`quantum_kernels.exact_fidelity_kernel`, tested against
 `FidelityQuantumKernel` to 1e-8), multiplies the quantum inputs by a scale s in
 {0.05, 0.1, 0.2, 0.5, 1}, and fits the same `SVC` the QSVC fits. For each feature map it picks the s

@@ -7,7 +7,10 @@ two random 6-qubit states. This script tests whether that encoding scale, rather
 sample size or the feature count, explains the chance-level QSVM results. It does not change
 the pipeline or reports/results.json.
 
-Everything below was fixed before the first run.
+Everything below was fixed before this script's first run. This is not a blind test: the audit
+that found the concentration had already scored the test rows at s in {1, 0.5, 0.25, 0.1}
+(custom 0.798 at s = 0.1) before this grid and selection rule were committed, so this is a
+confirmatory rerun with a selection rule fixed before the committed run.
 
 - Intervention: multiply the quantum inputs (train and evaluation rows alike) by a scale
   factor s before encoding. SCALES = (0.05, 0.1, 0.2, 0.5, 1.0); s = 1.0 is the pipeline.
@@ -69,7 +72,7 @@ from qml_healthcare.models.quantum_kernels import (
     exact_fidelity_kernel,
 )
 
-# Pre-specified before the first run (see the module docstring).
+# Fixed before this script's first run, not blind to test results (see the module docstring).
 SCALES: tuple[float, ...] = (0.05, 0.1, 0.2, 0.5, 1.0)
 SEED: int = RANDOM_SEED
 N_BOOT: int = 1000

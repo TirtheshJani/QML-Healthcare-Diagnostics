@@ -22,7 +22,7 @@ Qiskit, fully seeded, and honest about what it found.
 <div class="callout-headline" markdown>
 **Headline:** on the synthetic data, Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845].
 With the pipeline's unscaled angle encoding every quantum model's 95% confidence interval includes
-0.5. A pre-specified bandwidth ablation traces the QSVM result to that encoding: the kernels sit at the
+0.5. A bandwidth ablation traces the QSVM result to that encoding: the kernels sit at the
 random-state value, and with the input scale picked on validation data the QSVMs reach test ROC-AUC
 0.70 to 0.80, the best of them level with logistic regression on the same 200 rows. An RBF SVM with
 its bandwidth tuned the same way (a post-hoc control) reaches 0.810 there, so the rescaling removes an

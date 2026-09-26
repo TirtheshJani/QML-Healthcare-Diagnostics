@@ -6,7 +6,7 @@ result about a specific setting, not a general claim.
 ## What the benchmark does not claim
 
 - **It does not show quantum machine learning fails.** It shows that, with the pipeline's unscaled
-  angle encoding, the quantum models do not beat chance on this task. For the QSVMs a pre-specified
+  angle encoding, the quantum models do not beat chance on this task. For the QSVMs a
   [bandwidth ablation](findings.md#kernel-bandwidth-ablation) traces that to the encoding: the
   StandardScaler z-scores go in as rotation angles, the kernel sits at the random-state fidelity, and
   with the input scale picked on validation data the QSVMs reach test ROC-AUC 0.70 to 0.80 on the same
@@ -41,8 +41,11 @@ to logistic regression's 0.817 [0.787, 0.845].
 - The quantum inputs are **unscaled z-scores used as rotation angles**, which leaves the fidelity
   kernels at the random-state value (off-diagonal mean 0.0160 to 0.0194 against 1/2^6 = 0.0156). The
   bandwidth ablation picks the scale on the validation split, but for ZZ and Pauli the chosen value is
-  the smallest on the grid, so the best scale may be smaller still. The VQC and QNN use the same
-  encoding and were not rerun with a rescaled one.
+  the smallest on the grid, so the best scale may be smaller still. The ablation is not a blind
+  test: the audit that found the concentration had already scored the test rows at s in
+  {1, 0.5, 0.25, 0.1} (custom 0.798 at s = 0.1) before this grid and selection rule were committed,
+  so it is a confirmatory rerun with a selection rule fixed before the committed run. The VQC and
+  QNN use the same encoding and were not rerun with a rescaled one.
 - The **VQC and QNN are under-trained.** Each has 18 trainable weights (`RealAmplitudes(6, reps=2)`)
   and gets 60 COBYLA loss evaluations. qiskit-machine-learning's cross-entropy uses log base 2, so a
   constant 0.5 prediction costs 1.0 bit; the committed runs end at 0.955 bits (VQC) and 0.950 bits

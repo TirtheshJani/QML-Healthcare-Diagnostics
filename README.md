@@ -18,7 +18,7 @@
 > **All results reported here come from that synthetic fallback, not the real
 > WiDS data.** On it, Logistic Regression is the strongest model (ROC-AUC 0.817,
 > 95% bootstrap CI [0.787, 0.845]) and every quantum model's ROC-AUC CI
-> includes 0.5, so the quantum models are at chance. A pre-specified
+> includes 0.5, so the quantum models are at chance. A
 > [kernel bandwidth ablation](#kernel-bandwidth-ablation) traces the QSVM null to
 > the unscaled angle encoding: with the input scale picked on validation data,
 > QSVM test ROC-AUC rises to 0.70 to 0.80, and an RBF SVM with its bandwidth tuned
@@ -141,7 +141,7 @@ python scripts/reproduce_all.py --n 400 --k 8 --reps 2 --maxiter 100
 │   ├── train_baseline.py      # Classical baselines only
 │   ├── train_qsvm.py          # QSVM only (--feature-maps zz pauli custom)
 │   ├── train_vqc_qnn.py       # VQC + QNN only
-│   ├── ablate_kernel_bandwidth.py # Pre-specified kernel bandwidth ablation (QSVM)
+│   ├── ablate_kernel_bandwidth.py # Kernel bandwidth ablation (QSVM)
 │   ├── posthoc_tuned_rbf_control.py # Post-hoc tuned RBF control for the ablation
 │   ├── update_readme_table.py # Refresh the results table in this README
 │   ├── build_docs_tables.py   # Results table + chart data for the docs site
@@ -364,7 +364,10 @@ s in {0.05, 0.1, 0.2, 0.5, 1}, pick s for each feature map by ROC-AUC on the pip
 500-row validation split (otherwise unused), and score the test rows only at s = 1 and
 at the chosen s, with the same bootstrap as the main table. It uses exact statevector
 kernels, which reproduce the committed QSVM rows at s = 1 exactly. The pipeline and
-`reports/results.json` are unchanged.
+`reports/results.json` are unchanged. The audit that found the concentration had already
+scored the test rows at s in {1, 0.5, 0.25, 0.1} (custom 0.798 at s = 0.1) before this
+grid and selection rule were committed, so this is a confirmatory rerun with a selection
+rule fixed before the committed run, not a blind test.
 
 | Model, same 200-row, 6-feature split | s | Kernel off-diag. mean | Test ROC-AUC [95% CI] |
 |---|---:|---:|:---|

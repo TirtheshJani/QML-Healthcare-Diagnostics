@@ -6,9 +6,9 @@ held-out test rows, and attaches a 95% bootstrap confidence interval to every me
 models are scored on the full 1,000-row test split and the quantum models on a class-balanced 200-row
 subsample of it, so compare ROC-AUC and balanced accuracy across the two groups, not accuracy or
 PR-AUC (see [Limitations](limitations.md)). With the pipeline's encoding the classical models carry
-real signal and the quantum models do not. A pre-specified
-[kernel bandwidth ablation](#kernel-bandwidth-ablation) shows that, for the QSVMs, this comes from
-the unscaled angle encoding rather than from the sample size.
+real signal and the quantum models do not. A [kernel bandwidth ablation](#kernel-bandwidth-ablation)
+shows that, for the QSVMs, this comes from the unscaled angle encoding rather than from the sample
+size.
 
 ## Results
 
@@ -83,7 +83,10 @@ was committed before it was run. It multiplies the inputs by s in {0.05, 0.1, 0.
 for each feature map by ROC-AUC on the 500-row validation split (unused by the pipeline), and scores
 the test rows only at s = 1 and at the chosen s, with the same bootstrap as the table above. Its exact
 statevector kernels reproduce the committed QSVM rows at s = 1 exactly. All rows below use the same
-200 training rows, 6 features and 200 test rows.
+200 training rows, 6 features and 200 test rows. The audit that found the concentration had already
+scored the test rows at s in {1, 0.5, 0.25, 0.1} (custom 0.798 at s = 0.1) before this grid and
+selection rule were committed, so this is a confirmatory rerun with a selection rule fixed before the
+committed run, not a blind test.
 
 | Model | s | Kernel off-diag. mean | Test ROC-AUC [95% CI] |
 |---|---:|---:|:---|
