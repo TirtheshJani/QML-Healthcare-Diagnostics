@@ -58,7 +58,7 @@ statistically indistinguishable from a coin flip on this test set.
    the SVM to use. After bandwidth selection the point estimates spread out (custom 0.798, Pauli
    0.728, ZZ 0.701), but neighbouring intervals overlap.
 
-4. **Runtime reflects the kernel implementation.** Classical models train in 0.006 to 1.1 seconds.
+4. **Runtime reflects the implementation.** Classical models train in 0.006 to 1.1 seconds.
    The quantum models take 37 to 174 seconds on a statevector simulator, roughly 30 to 30,000 times
    slower, driven for the QSVMs by the O(N squared) ComputeUncompute circuits of the fidelity kernel,
    one per kernel entry. That factor is specific to this implementation: an exact statevector kernel

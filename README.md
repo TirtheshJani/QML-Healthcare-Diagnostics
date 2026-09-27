@@ -455,7 +455,7 @@ RBF control is not in it.
   estimates spread out (custom 0.798, Pauli 0.728, ZZ 0.701), but neighbouring CIs
   overlap, so this does not establish a ranking.
 
-- **Runtime here reflects the kernel implementation.** The pipeline's
+- **Runtime here reflects the implementation.** The pipeline's
   `FidelityQuantumKernel` runs one ComputeUncompute circuit per kernel entry, so each
   QSVM fit needs O(N²) circuit runs; VQC/QNN are linear in N but every COBYLA
   evaluation runs the full forward pass on all training points. With this
