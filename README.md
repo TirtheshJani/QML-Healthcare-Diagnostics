@@ -463,7 +463,9 @@ RBF control is not in it.
   classical baselines. That gap belongs to the implementation, not to simulating 6
   qubits: an exact statevector kernel simulates each point once, and the exact
   training and test kernels plus the SVC fit take 0.9 to 5.6 s per feature map
-  (`reports/bandwidth_ablation.json`).
+  (`reports/bandwidth_ablation.json`), measured on a different machine (the slower,
+  shared Linux machine used for the ablation) from the original run that produced the
+  pipeline's QSVC times.
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
   construct a learning problem with a provable quantum-kernel speedup. ICU

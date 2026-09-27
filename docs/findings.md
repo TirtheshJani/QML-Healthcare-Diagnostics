@@ -63,7 +63,9 @@ statistically indistinguishable from a coin flip on this test set.
    The quantum models take 37 to 174 seconds on a statevector simulator, driven for the QSVMs by the
    O(N squared) ComputeUncompute circuits of the fidelity kernel, one per kernel entry. That gap is
    specific to this implementation: an exact statevector kernel simulates each point once, and the
-   exact training and test kernels plus the SVC fit take 0.9 to 5.6 seconds per feature map.
+   exact training and test kernels plus the SVC fit take 0.9 to 5.6 seconds per feature map, measured
+   on a different machine (the slower, shared Linux machine used for the ablation) from the original
+   run that produced the pipeline's QSVC times.
 
 5. **The result is about this encoding on this data.** The chance-level result is a statement about
    the pipeline's unscaled encoding on this synthetic benchmark, not about quantum machine learning in

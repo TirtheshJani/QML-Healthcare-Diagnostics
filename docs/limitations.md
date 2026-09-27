@@ -37,7 +37,9 @@ to logistic regression's 0.817 [0.787, 0.845].
   QSVM fit needs **O(N squared)** circuit runs. That is what dominates its runtime and why it uses a
   200-row subsample. It is not a limit of simulating 6 qubits: an exact statevector kernel simulates
   each point once, and the exact training and test kernels plus the SVC fit take 0.9 to 5.6 seconds
-  per feature map. Full-N and cross-validated quantum runs were not done here.
+  per feature map, measured on a different machine (the slower, shared Linux machine used for the
+  ablation) from the original run that produced the pipeline's QSVC times. Full-N and
+  cross-validated quantum runs were not done here.
 - The quantum inputs are **unscaled z-scores used as rotation angles**, which leaves the fidelity
   kernels at the random-state value (off-diagonal mean 0.0160 to 0.0194 against 1/2^6 = 0.0156). The
   bandwidth ablation picks the scale on the validation split, but for ZZ and Pauli the chosen value is
