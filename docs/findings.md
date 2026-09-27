@@ -119,12 +119,12 @@ The classical controls from the ablation script use the pipeline's default hyper
 each QSVM had its input scale chosen on validation. A post-hoc control, added after these results
 were committed (`scripts/posthoc_tuned_rbf_control.py`), tunes an RBF SVM the same way: gamma set to
 the default value times s squared over the same grid, C = 1, s chosen by the same rule on the same
-validation rows, test rows scored once with the same bootstrap. It picks s = 0.2. At the selected
-scales the fidelity kernels behave like smooth classical kernels (the off-diagonal entries of the
-custom and Pauli training kernels correlate 0.93 and 0.85 with those of the tuned RBF kernel; ZZ, at
-0.52, less so), and a bandwidth-tuned RBF SVM reaches 0.810 [0.747, 0.865] on the same rows, a higher
-point estimate than every QSVM, though the intervals overlap. So the ablation shows the null was an
-encoding artifact, not a quantum benefit.
+validation rows, test rows scored once with the same bootstrap. It picks s = 0.2, and the
+bandwidth-tuned RBF SVM reaches 0.810 [0.747, 0.865] on the same rows, a higher point estimate than
+every QSVM, though the intervals overlap. At each map's selected scale, the off-diagonal entries of its
+training kernel correlate with those of the tuned RBF kernel at 0.93 for the custom map, 0.85 for
+Pauli Z+XX and 0.52 for ZZ. So the rescaling removes an encoding artifact; it does not show a quantum
+benefit.
 
 For ZZ and Pauli the chosen s = 0.05 is the smallest value on the grid, so a smaller s might score
 higher; the grid was not extended after seeing the results. The VQC and QNN use the same encoding and
