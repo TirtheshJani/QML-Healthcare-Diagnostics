@@ -55,7 +55,9 @@ control after the ablation.
 
 All randomness is seeded with `RANDOM_SEED = 42`: the splits, the model fits (including the VQC and
 QNN initial weights and shot sampling), and the bootstrap resampling. Re-running the pipeline
-reproduces the same metrics; only the wall-clock training times change.
+reproduces the same metrics; only the wall-clock training times change. Re-running also rewrites the
+committed figures in `reports/figures/`. On another machine the fonts may render differently, but the
+plotted values are the same, apart from the training times in `runtime_comparison.png`.
 
 Without Kaggle credentials the pipeline uses the synthetic fallback, so the numbers shown on this site
 come from synthetic data. They are internally consistent and reproducible, but they are not the real
