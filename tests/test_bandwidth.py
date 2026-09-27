@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -15,6 +17,9 @@ from qml_healthcare.models.quantum_kernels import (
     exact_fidelity_kernel,
     make_quantum_kernel,
 )
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from ablate_kernel_bandwidth import DESCRIPTION  # noqa: E402
 
 
 def test_svc_on_exact_kernel_matches_pipeline_qsvc(small_quantum_data):
@@ -57,7 +62,8 @@ def test_sweep_scales_reports_every_scale(small_quantum_data):
 
 def test_committed_ablation_agrees_with_committed_results():
     """reports/bandwidth_ablation.json must reproduce the committed QSVM rows at s = 1.0, and
-    each selected scale must follow the pre-specified rule on the recorded validation AUCs."""
+    each selected scale must follow the selection rule of the design fixed before the first run,
+    applied to the recorded validation AUCs."""
     ablation = json.loads((REPORTS_DIR / "bandwidth_ablation.json").read_text(encoding="utf-8"))
     committed = load_results()["qsvm"]
     for name, m in ablation["feature_maps"].items():
@@ -66,3 +72,10 @@ def test_committed_ablation_agrees_with_committed_results():
         val = {r["scale"]: r["val_roc_auc"] for r in m["sweep"]}
         assert m["selected_scale"] == select_scale(val)
         assert m["test"]["selected"]["scale"] == m["selected_scale"]
+
+
+def test_committed_ablation_description_is_the_one_the_script_writes():
+    """The description in reports/bandwidth_ablation.json must equal the string that
+    scripts/ablate_kernel_bandwidth.py writes, so an edit to one without the other fails here."""
+    ablation = json.loads((REPORTS_DIR / "bandwidth_ablation.json").read_text(encoding="utf-8"))
+    assert ablation["description"] == DESCRIPTION

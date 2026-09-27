@@ -79,6 +79,11 @@ N_BOOT: int = 1000
 APACHE: str = "apache_4a_hospital_death_prob"
 OUT_JSON = REPORTS_DIR / "bandwidth_ablation.json"
 OUT_FIG = FIGURES_DIR / "bandwidth_ablation.png"
+DESCRIPTION: str = (
+    "Kernel bandwidth ablation for the QSVM feature maps, added after an audit found the "
+    "committed kernels at the random-state fidelity. See the docstring of "
+    "scripts/ablate_kernel_bandwidth.py for the design fixed before the first run."
+)
 
 # First three slots of a colorblind-validated categorical palette, one per feature map.
 MAP_COLORS = {"zz": "#2a78d6", "pauli": "#eb6834", "custom": "#1baf7a"}
@@ -188,11 +193,7 @@ def run() -> dict:
     jf = b.feature_names.index(APACHE)
 
     return {
-        "description": (
-            "Kernel bandwidth ablation for the QSVM feature maps, added after an audit found the "
-            "committed kernels at the random-state fidelity. See the docstring of "
-            "scripts/ablate_kernel_bandwidth.py for the pre-specified design."
-        ),
+        "description": DESCRIPTION,
         "prespecified": {
             "scales": list(SCALES),
             "model": "SVC(kernel='precomputed', C=1.0) on the exact fidelity kernel",

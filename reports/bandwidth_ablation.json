@@ -1,5 +1,5 @@
 {
-  "description": "Kernel bandwidth ablation for the QSVM feature maps, added after an audit found the committed kernels at the random-state fidelity. See the docstring of scripts/ablate_kernel_bandwidth.py for the pre-specified design.",
+  "description": "Kernel bandwidth ablation for the QSVM feature maps, added after an audit found the committed kernels at the random-state fidelity. See the docstring of scripts/ablate_kernel_bandwidth.py for the design fixed before the first run.",
   "prespecified": {
     "scales": [
       0.05,
