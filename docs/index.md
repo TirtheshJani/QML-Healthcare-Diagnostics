@@ -87,7 +87,9 @@ every quantum bar crosses it. For the rescaled QSVMs and the tuned RBF control, 
   </a>
   <a class="nav-card" href="reproducibility.html">
     <h3>Reproducibility</h3>
-    <p>One command rebuilds every number, figure, and table from a fixed seed.</p>
+    <p>One command rebuilds the main pipeline's numbers, figures, and tables from a fixed seed; two
+    more, <code>ablate_kernel_bandwidth.py</code> and <code>posthoc_tuned_rbf_control.py</code>,
+    rebuild the bandwidth ablation.</p>
   </a>
   <a class="nav-card" href="limitations.html">
     <h3>Limitations</h3>

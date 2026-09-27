@@ -1,6 +1,9 @@
 # Reproducibility
 
-Every number, figure, and table in this project is regenerated from a fixed seed by one command.
+The main pipeline's numbers, figures, and tables are regenerated from a fixed seed by one command,
+`scripts/reproduce_all.py`. The kernel bandwidth ablation and its post-hoc control are rebuilt by two
+more, `scripts/ablate_kernel_bandwidth.py` and then `scripts/posthoc_tuned_rbf_control.py` (see
+below).
 
 ## Environment
 

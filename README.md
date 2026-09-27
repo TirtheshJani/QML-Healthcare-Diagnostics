@@ -510,6 +510,11 @@ python scripts/train_qsvm.py --n 200 --k 6 --reps 2 --feature-maps zz pauli cust
 
 # VQC + QNN
 python scripts/train_vqc_qnn.py --n 200 --k 6 --reps 2 --maxiter 60
+
+# Kernel bandwidth ablation, then its post-hoc tuned RBF control (in this order;
+# not run by reproduce_all.py)
+python scripts/ablate_kernel_bandwidth.py
+python scripts/posthoc_tuned_rbf_control.py
 ```
 
 ---
