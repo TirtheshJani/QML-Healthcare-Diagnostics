@@ -7,8 +7,9 @@ models are scored on the full 1,000-row test split and the quantum models on a c
 subsample of it, so compare ROC-AUC and balanced accuracy across the two groups, not accuracy or
 PR-AUC (see [Limitations](limitations.md)). With the pipeline's encoding the classical models carry
 real signal and the quantum models do not. A [kernel bandwidth ablation](#kernel-bandwidth-ablation)
-shows that, for the QSVMs, this comes from the unscaled angle encoding rather than from the sample
-size.
+traces the QSVM result to the unscaled angle encoding: rescaling alone, at the same N = 200 and 6
+features, lifts QSVM test ROC-AUC to 0.70 to 0.80, so the small N and feature count do not explain
+the null.
 
 ## Results
 

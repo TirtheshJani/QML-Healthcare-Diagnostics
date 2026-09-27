@@ -388,10 +388,10 @@ rule fixed before the committed run, not a blind test.
 The figure shows the classical controls at default hyperparameters; the post-hoc tuned
 RBF control is not in it.
 
-- With the scale chosen on validation data every QSVM is clear of chance (0.70 to
-  0.80), and logistic regression reaches 0.794 on the same 200 rows and 6 features.
-  So the chance-level QSVM rows in the main table come from the unscaled encoding, not
-  from N = 200 or from using 6 features.
+- With the scale chosen on validation data every QSVM is clear of chance, and logistic
+  regression reaches 0.794 on the same 200 rows and 6 features. Rescaling alone, at the
+  same N = 200 and 6 features, lifts QSVM test ROC-AUC to 0.70 to 0.80, so the small N
+  and feature count do not explain the null.
 - The best QSVM (custom, s = 0.1) is level with logistic regression on these rows
   (0.798 against 0.794, with nearly the same CI); ZZ and Pauli stay below it. No
   model's point estimate beats the APACHE column alone (0.812), which is one of the
@@ -423,13 +423,13 @@ RBF control is not in it.
   0.5 (QSVM-Pauli 0.52 [0.44, 0.60], QSVM-ZZ 0.51 [0.43, 0.59], QSVM-custom
   0.51 [0.44, 0.59], QNN 0.48 [0.40, 0.56], VQC 0.44 [0.35, 0.52]). For the QSVMs
   the cause is the unscaled angle encoding: the kernels sit at the random-state
-  fidelity (off-diagonal mean 0.016 to 0.019 against 1/64), and rescaling the inputs,
-  with the scale picked on validation data, lifts test ROC-AUC to 0.70 to 0.80 on the
-  same rows, where an RBF SVM tuned the same way (a post-hoc control) reaches 0.810
-  (see [Kernel bandwidth ablation](#kernel-bandwidth-ablation)). So the
-  QSVM null is a property of the pipeline's encoding, which leaves the kernel at the
-  random-state value. It does not show that quantum kernels cannot learn this task,
-  and it is not a statement about N = 200.
+  fidelity (off-diagonal mean 0.016 to 0.019 against 1/64), and rescaling alone, at the
+  same N = 200 and 6 features, with the scale picked on validation data, lifts QSVM test
+  ROC-AUC to 0.70 to 0.80, where an RBF SVM tuned the same way (a post-hoc control)
+  reaches 0.810 (see [Kernel bandwidth ablation](#kernel-bandwidth-ablation)). So the
+  small N and feature count do not explain the null: it is a property of the pipeline's
+  encoding, which leaves the kernel at the random-state value. It does not show that
+  quantum kernels cannot learn this task.
 
 - **The VQC and QNN are under-trained.** Each has 18 trainable weights
   (`RealAmplitudes(6, reps=2)`) and gets 60 COBYLA loss evaluations.
