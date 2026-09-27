@@ -460,10 +460,10 @@ RBF control is not in it.
   QSVM fit needs O(N²) circuit runs; VQC/QNN are linear in N but every COBYLA
   evaluation runs the full forward pass on all training points. With this
   implementation the quantum models take ~37-174 s versus ~0.006-1.1 s for the
-  classical baselines (roughly 30× to 30,000× slower). That gap belongs to the
-  implementation, not to simulating 6 qubits: an exact statevector kernel simulates
-  each point once, and the exact training and test kernels plus the SVC fit take
-  0.9 to 5.6 s per feature map (`reports/bandwidth_ablation.json`).
+  classical baselines. That gap belongs to the implementation, not to simulating 6
+  qubits: an exact statevector kernel simulates each point once, and the exact
+  training and test kernels plus the SVC fit take 0.9 to 5.6 s per feature map
+  (`reports/bandwidth_ablation.json`).
 
 - **Where quantum kernels could matter.** Liu, Arunachalam & Temme (2021)
   construct a learning problem with a provable quantum-kernel speedup. ICU
