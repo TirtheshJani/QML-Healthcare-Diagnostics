@@ -11,7 +11,6 @@ from qml_healthcare.config import (
     DEFAULT_QUANTUM_SUBSAMPLE,
     DEFAULT_QUBITS,
     DEFAULT_REPS,
-    RANDOM_SEED,
     ensure_dirs,
 )
 from qml_healthcare.data.download import ensure_dataset
@@ -253,9 +252,11 @@ def run_all(
     quantum_k: int = DEFAULT_QUBITS,
     reps: int = DEFAULT_REPS,
     bonus_maxiter: int = 60,
-    seed: int = RANDOM_SEED,  # noqa: ARG001
 ) -> dict:
-    """Run all five pipeline stages in sequence and return the final metrics dict."""
+    """Run all five pipeline stages in sequence and return the final metrics dict.
+
+    Every stage uses ``RANDOM_SEED`` from ``config``; there is no per-run seed.
+    """
     run_data()
     run_baseline(quantum_n=quantum_n, quantum_k=quantum_k)
     run_qsvm(quantum_n=quantum_n, quantum_k=quantum_k, reps=reps)

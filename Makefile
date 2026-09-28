@@ -11,7 +11,7 @@ help:
 	@echo "  bonus       Train VQC + QNN bonus models"
 	@echo "  reports     Build final comparison plots from results.json"
 	@echo "  notebooks   Execute notebooks/01..06 with nbconvert"
-	@echo "  all         setup → data → baseline → qsvm → bonus → reports"
+	@echo "  all         data → baseline → qsvm → bonus → reports (run setup first)"
 	@echo "  test        Run pytest"
 	@echo "  lint        Ruff + Black --check"
 	@echo "  format      Ruff --fix + Black"

@@ -11,6 +11,7 @@ from qiskit_machine_learning.algorithms import NeuralNetworkClassifier
 from qiskit_machine_learning.neural_networks import SamplerQNN
 from scipy.optimize import minimize
 
+from qml_healthcare.config import RANDOM_SEED
 from qml_healthcare.models._base import FittedModel
 from qml_healthcare.models.quantum_kernels import build_feature_map
 
@@ -22,15 +23,24 @@ def train_qnn(
     n_features: int,
     reps: int = 2,
     maxiter: int = 60,
+    seed: int = RANDOM_SEED,
 ) -> FittedModel:
-    """Train a SamplerQNN classifier (PauliFeatureMap + RealAmplitudes); return predictions."""
+    """Train a SamplerQNN classifier (PauliFeatureMap + RealAmplitudes); return predictions.
+
+    ``seed`` fixes the initial weights and the sampler's shot sampling, so reruns match.
+    """
     loss_history: list[float] = []
 
-    def callback(weights: np.ndarray, loss: float) -> None:
-        loss_history.append(float(loss))
-
     def cobyla_optimizer(fun, x0, jac=None, bounds=None):  # noqa: ARG001
-        return minimize(fun, x0, method="COBYLA", options={"maxiter": maxiter, "rhobeg": 0.5})
+        # qiskit-machine-learning only invokes `callback` for its own SciPyOptimizer classes,
+        # not for a plain callable like this one, so record each loss evaluation here.
+        def logged_fun(weights: np.ndarray) -> float:
+            loss = fun(weights)
+            loss_history.append(float(loss))
+            return loss
+
+        options = {"maxiter": maxiter, "rhobeg": 0.5}
+        return minimize(logged_fun, x0, method="COBYLA", options=options)
 
     feature_map = build_feature_map("pauli", n_features=n_features, reps=1)
     ansatz = RealAmplitudes(n_features, reps=reps)
@@ -43,7 +53,7 @@ def train_qnn(
         weight_params=list(ansatz.parameters),
         interpret=lambda x: int(x) % 2,
         output_shape=2,
-        sampler=StatevectorSampler(),
+        sampler=StatevectorSampler(seed=seed),
     )
 
     classifier = NeuralNetworkClassifier(
@@ -51,7 +61,7 @@ def train_qnn(
         loss="cross_entropy",
         one_hot=True,
         optimizer=cobyla_optimizer,
-        callback=callback,
+        initial_point=np.random.default_rng(seed).random(qnn.num_weights),
     )
 
     t0 = time.perf_counter()

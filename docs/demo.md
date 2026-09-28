@@ -5,10 +5,11 @@ logistic regression's coefficients and the scaler statistics are exported to JSO
 recomputed in JavaScript as you move the sliders.
 
 !!! warning "Read this first"
-    This is a deliberately simplified demonstration model fit on six interpretable inputs. It is
-    **not** the full benchmark model and is **not** for clinical use. Its own held-out ROC-AUC is
-    shown below so you can judge it honestly. The quantum models are not used here: they sit at chance
-    on this task (see [Findings](findings.md)) and are far too slow to run live.
+    This is a deliberately simplified demonstration model fit on six interpretable inputs. It is fit
+    on the synthetic fallback data, not real patients. It is **not** the full benchmark model and is
+    **not** for clinical use. Its own held-out ROC-AUC is shown below so you can judge it honestly.
+    The quantum models are not used here; with the pipeline's encoding they sit at chance on this task
+    (see [Findings](findings.md)).
 
 <div class="qml-demo" data-model-url="assets/data/demo_model.json">
   <p class="demo-loading">Loading the demo model...</p>

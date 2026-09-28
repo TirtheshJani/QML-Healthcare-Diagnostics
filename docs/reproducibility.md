@@ -1,12 +1,18 @@
 # Reproducibility
 
-Every number, figure, and table in this project is regenerated from a fixed seed by one command.
+The main pipeline's numbers, figures, and tables are regenerated from a fixed seed by one command,
+`scripts/reproduce_all.py`. The kernel bandwidth ablation and its post-hoc control are rebuilt by two
+more, `scripts/ablate_kernel_bandwidth.py` and then `scripts/posthoc_tuned_rbf_control.py` (see
+below).
 
 ## Environment
 
 - Python 3.10 to 3.12. On Windows, use the launcher: `py -3.11`.
 - Verified stack: Qiskit 1.4.5, qiskit-machine-learning 0.8.4, scikit-learn 1.8, pandas 3.0,
   numpy 2.4.
+- Also rerun on Linux with Qiskit 1.4.6, qiskit-machine-learning 0.8.4, scikit-learn 1.9.1,
+  pandas 3.0.6, numpy 2.4.6: the classical and QSVM metrics matched exactly on Python 3.11, and the
+  seeded VQC and QNN gave identical metrics on Python 3.11 and 3.12.
 
 Install the package with its development tools:
 
@@ -36,15 +42,32 @@ py -3.11 scripts/reproduce_all.py --n 200 --k 6 --reps 2 --maxiter 60
 
 Individual stages are also available as scripts: `scripts/download_data.py`,
 `scripts/train_baseline.py`, `scripts/train_qsvm.py`, and `scripts/train_vqc_qnn.py`.
+The kernel bandwidth ablation runs separately, reads the committed `reports/results.json` without
+changing it, and writes `reports/bandwidth_ablation.json` and its figure:
+
+```bash
+py -3.11 scripts/ablate_kernel_bandwidth.py
+py -3.11 scripts/posthoc_tuned_rbf_control.py
+```
+
+The second command is the post-hoc tuned RBF control. It adds the key `posthoc_tuned_rbf` to
+`reports/bandwidth_ablation.json`; the ablation script rewrites that file without it, so run the
+control after the ablation. The JSON's `prespecified` key keeps its name for compatibility: it holds
+the design fixed before the script's first run, which was not blind to test results (see the
+script's docstring).
 
 ## Determinism and the data caveat
 
-All randomness is seeded with `RANDOM_SEED = 42`: the splits, the model fits, and the bootstrap
-resampling. Re-running the pipeline reproduces the same metrics.
+All randomness is seeded with `RANDOM_SEED = 42`: the splits, the model fits (including the VQC and
+QNN initial weights and shot sampling), and the bootstrap resampling. Re-running the pipeline
+reproduces the same metrics; only the wall-clock training times change. Re-running also rewrites the
+committed figures in `reports/figures/`. On another machine the fonts may render differently, but the
+plotted values are the same, apart from the training times in `runtime_comparison.png`.
 
 Without Kaggle credentials the pipeline uses the synthetic fallback, so the numbers shown on this site
 come from synthetic data. They are internally consistent and reproducible, but they are not the real
-WiDS results. To run on the real data, place a Kaggle API token at `~/.kaggle/kaggle.json` and re-run.
+WiDS results. To run on the real data, place a Kaggle API token at `~/.kaggle/kaggle.json`, delete
+the synthetic fallback at `data/raw/training_v2.csv` (otherwise it is reused), and re-run.
 
 ## Rebuild this site
 

@@ -56,7 +56,8 @@ def generate_synthetic_icu(n: int = 5000, seed: int = RANDOM_SEED) -> pd.DataFra
     """Generate a WiDS-schema-compatible synthetic ICU dataset.
 
     Correlated, realistic distributions with a logistic-link mortality target.
-    Class balance matches WiDS (~8% mortality).
+    The positive rate is about 22% (1,111 of 5,000 rows at the defaults), well above
+    the ~8% mortality of the real WiDS data.
     """
     rng = np.random.default_rng(seed)
 

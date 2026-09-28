@@ -1,4 +1,9 @@
-"""Reproduce every figure and number in the README."""
+"""Reproduce the main pipeline's numbers and figures, then refresh the README results table.
+
+This does not run the kernel bandwidth ablation or its post-hoc control. Rebuild those with
+``python scripts/ablate_kernel_bandwidth.py`` and then
+``python scripts/posthoc_tuned_rbf_control.py``.
+"""
 
 from __future__ import annotations
 

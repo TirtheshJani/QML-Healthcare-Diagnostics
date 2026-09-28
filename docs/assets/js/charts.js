@@ -11,10 +11,6 @@
     return type === "quantum" ? QUANTUM : CLASSICAL;
   }
 
-  function formatInt(n) {
-    return Math.round(n).toLocaleString("en-US");
-  }
-
   function setKpi(name, value) {
     var nodes = document.querySelectorAll('[data-kpi="' + name + '"]');
     nodes.forEach(function (el) {
@@ -41,28 +37,9 @@
         return b.roc_auc > a.roc_auc ? b : a;
       });
       setKpi("best-quantum-auc", bestQ.roc_auc.toFixed(3));
-      setKpi("best-quantum-label", bestQ.label);
+      setKpi("best-quantum-label", bestQ.label + ", pipeline encoding");
     }
     setKpi("model-count", String(models.length));
-
-    var classicalTimes = classical
-      .map(function (m) {
-        return m.train_seconds;
-      })
-      .filter(function (t) {
-        return typeof t === "number" && t > 0;
-      });
-    var quantumTimes = quantum
-      .map(function (m) {
-        return m.train_seconds;
-      })
-      .filter(function (t) {
-        return typeof t === "number" && t > 0;
-      });
-    if (classicalTimes.length && quantumTimes.length) {
-      var ratio = Math.max.apply(null, quantumTimes) / Math.min.apply(null, classicalTimes);
-      setKpi("slowdown", formatInt(ratio) + "x");
-    }
   }
 
   // Dashed vertical line at ROC-AUC = 0.5 (chance).

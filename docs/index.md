@@ -8,8 +8,10 @@ hide:
 
 # Quantum ML for ICU Mortality Prediction
 
-A reproducible benchmark of **Quantum SVMs, a VQC, and a QNN** against classical baselines on the
-WiDS Datathon 2020 ICU dataset. Built on Qiskit, fully seeded, and honest about what it found.
+A reproducible benchmark of **Quantum SVMs, a VQC, and a QNN** against classical baselines for ICU
+mortality prediction. The pipeline is built for the WiDS Datathon 2020 ICU dataset, but every result on
+this site comes from its schema-matched **synthetic fallback**, not the real WiDS data. Built on
+Qiskit, fully seeded, and honest about what it found.
 
 [View the findings](findings.md){ .md-button .md-button--primary }
 [Try the live demo](demo.md){ .md-button }
@@ -18,10 +20,15 @@ WiDS Datathon 2020 ICU dataset. Built on Qiskit, fully seeded, and honest about 
 </section>
 
 <div class="callout-headline" markdown>
-**Headline:** at this scale, the classical models win cleanly and the quantum models sit at chance.
-Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845]; every quantum model's 95% confidence
-interval includes 0.5, while running two to four orders of magnitude slower. That negative result is
-the point: it is what a careful, leakage-free audit actually shows.
+**Headline:** on the synthetic data, Logistic Regression reaches ROC-AUC **0.817** [0.787, 0.845].
+With the pipeline's unscaled angle encoding every quantum model's 95% confidence interval includes
+0.5. A bandwidth ablation traces the QSVM result to that encoding: the kernels sit at the
+random-state value, and with the input scale picked on validation data the QSVMs reach test ROC-AUC
+0.70 to 0.80, the best of them level with logistic regression on the same 200 rows. An RBF SVM with
+its bandwidth tuned the same way (a post-hoc control) reaches 0.810 there, so the rescaling removes an
+encoding artifact rather than showing a quantum benefit. On those rows no model, classical or
+quantum, scores above the APACHE risk column alone. See the
+[findings](findings.md#kernel-bandwidth-ablation).
 </div>
 
 ## At a glance
@@ -42,17 +49,14 @@ the point: it is what a careful, leakage-free audit actually shows.
     <div class="kpi-label">Models benchmarked</div>
     <div class="kpi-sub">classical + quantum</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-value" data-kpi="slowdown">--</div>
-    <div class="kpi-label">Quantum slowdown</div>
-    <div class="kpi-sub">slowest quantum vs fastest classical</div>
-  </div>
 </div>
 
-## The one chart that tells the story
+## Main results table as a chart
 
 Each bar spans the 95% bootstrap confidence interval for ROC-AUC. The dashed line marks 0.5, the
-score of a coin flip. Classical bars sit clearly to the right of chance; every quantum bar crosses it.
+score of a coin flip. Classical bars sit clearly to the right of chance; with the pipeline's encoding
+every quantum bar crosses it. For the rescaled QSVMs and the tuned RBF control, see the
+[bandwidth ablation](findings.md#kernel-bandwidth-ablation).
 
 <div class="chart-card">
   <canvas id="chart-roc-auc" height="220" data-results-url="assets/data/results_data.json"></canvas>
@@ -83,7 +87,9 @@ score of a coin flip. Classical bars sit clearly to the right of chance; every q
   </a>
   <a class="nav-card" href="reproducibility.html">
     <h3>Reproducibility</h3>
-    <p>One command rebuilds every number, figure, and table from a fixed seed.</p>
+    <p>One command rebuilds the main pipeline's numbers, figures, and tables from a fixed seed; two
+    more, <code>ablate_kernel_bandwidth.py</code> and <code>posthoc_tuned_rbf_control.py</code>,
+    rebuild the bandwidth ablation.</p>
   </a>
   <a class="nav-card" href="limitations.html">
     <h3>Limitations</h3>
