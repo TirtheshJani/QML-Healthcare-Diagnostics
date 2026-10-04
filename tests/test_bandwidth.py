@@ -31,7 +31,12 @@ def test_svc_on_exact_kernel_matches_pipeline_qsvc(small_quantum_data):
         exact_fidelity_kernel(fm, X_train), y_train, exact_fidelity_kernel(fm, X_test, X_train)
     )
     np.testing.assert_array_equal(y_pred, qsvc.y_pred)
-    np.testing.assert_allclose(y_proba, qsvc.y_proba, atol=1e-6)
+    # The two kernels agree to ~1e-15 (tests/test_quantum_kernels.py checks them at 1e-8), but
+    # libsvm stops at its default tolerance (tol=1e-3), so rounding-level kernel differences can
+    # end the solver at slightly different dual solutions. That moves the scores by ~1e-5, and
+    # which side of 1e-6 it lands on depends on the platform. 1e-4 still fails on a real mismatch:
+    # changing C by 10 percent moves these scores by ~1.5e-2.
+    np.testing.assert_allclose(y_proba, qsvc.y_proba, atol=1e-4)
 
 
 def test_offdiag_mean_ignores_the_diagonal():
